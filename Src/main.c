@@ -20,6 +20,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+//#include "stm32f4xx_hal.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -68,6 +69,28 @@ static void MX_UART4_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+uint8_t readMPUreg(uint8_t reg)
+{
+	uint16_t deviceAddress = 0x68;
+	uint16_t shiftedAddress = deviceAddress << 1;
+	uint8_t pData[100];
+	pData[0] = reg; //register in question
+	uint16_t Size = 1;
+	HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, shiftedAddress, pData, Size, 1000); //select register
+	uint8_t value = 0;
+	status = HAL_I2C_Master_Receive(&hi2c1, shiftedAddress, &value, 1, 1000); //read from register
+	return value;
+}
+void writeMPUreg(uint8_t reg, uint8_t value)
+{
+	uint16_t deviceAddress = 0x68;
+	uint16_t shiftedAddress = deviceAddress << 1;
+	uint8_t pData[100];
+	pData[0] = reg; //register in question
+	pData[1] = value; //value to write
+	uint16_t Size = 2; //we need to send 2 bytes of data (check out mpu datasheet... write register operation is defined this way)
+	HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, shiftedAddress, pData, Size, 1000); //select register and write to it all in one
+}
 
 /* USER CODE END 0 */
 
@@ -110,8 +133,25 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  //let's try to read a register over I2C
+  readMPUreg(0x75);
+  readMPUreg(0x6B);
+  writeMPUreg(0x6B, 0x00);
+  readMPUreg(0x6B);
+  readMPUreg(0x6B);
+
+  readMPUreg(0x1C); //read accel config register
+
   while (1)
   {
+	  volatile int16_t accelX = 0;
+	  accelX = readMPUreg(0x3B); //read accel X MSB value
+	  accelX = accelX << 8;
+	  accelX |= (0x00FF) & readMPUreg(0x3C); //read accel X LSB value
+
+	  volatile float dummy = (float)accelX * (float)(1.0/16384.0); //multiply reading with Full Scale value
+	  dummy = 0;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
