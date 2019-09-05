@@ -150,8 +150,41 @@ int main(void)
 	  accelX = accelX << 8;
 	  accelX |= (0x00FF) & readMPUreg(0x3C); //read accel X LSB value
 
-	  volatile float dummy = (float)accelX * (float)(1.0/16384.0); //multiply reading with Full Scale value
-	  dummy = 0;
+	  volatile float floatX = (float)accelX * (float)(1.0/16384.0); //multiply reading with Full Scale value
+
+	  uint8_t uartData[100] = "This works yess!\n\r";
+	  snprintf(uartData, sizeof(uartData), "Accelx = %f \r\n", floatX);
+	  //HAL_UART_Transmit(&huart4, uartData, 50, 0x00FF);  //TODO: adapt timeout value
+
+	  // ok read all acceleration registers
+	  accelX = readMPUreg(0x3B);
+	  accelX = accelX << 8;
+	  accelX |= (0x00FF) & readMPUreg(0x3C); // LSB
+
+	  volatile int16_t accelY = 0;
+	  accelY = readMPUreg(0x3D);
+	  accelY = accelY << 8;
+	  accelY |= (0x00FF) & readMPUreg(0x3E); // LSB
+
+	  volatile int16_t accelZ = 0;
+	  accelZ = readMPUreg(0x3F);
+	  accelZ = accelY << 8;
+	  accelZ |= (0x00FF) & readMPUreg(0x40); // LSB
+
+	  volatile int16_t temp = 0;
+	  temp = readMPUreg(0x41); // MSB
+	  temp = temp << 8;
+	  temp |= (0x00FF) & readMPUreg(0x42); // LSB
+
+	  floatX = (float)accelX * (float)(1.0/16384.0); //multiply reading with Full Scale value
+	  volatile float floatY = (float)accelY * (float)(1.0/16384.0); //multiply reading with Full Scale value
+	  volatile float floatZ = (float)accelZ * (float)(1.0/16384.0); //multiply reading with Full Scale value
+	  volatile float floatTemp = ((float)temp / 340.0) + 36.53;
+
+	  snprintf(uartData, sizeof(uartData), "<%f, %f, %f, %f>\r\n", floatX, floatY, floatZ, floatTemp);
+	  HAL_UART_Transmit(&huart4, uartData, 50, 0x00FF);  //TODO: adapt timeout value
+
+	  HAL_Delay(200);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
