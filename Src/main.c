@@ -20,6 +20,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "circularBuffer.h"
 //#include "stm32f4xx_hal.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -50,7 +51,6 @@ TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim7;
 
 UART_HandleTypeDef huart4;
-
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -90,6 +90,80 @@ void writeMPUreg(uint8_t reg, uint8_t value)
 	pData[1] = value; //value to write
 	uint16_t Size = 2; //we need to send 2 bytes of data (check out mpu datasheet... write register operation is defined this way)
 	HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, shiftedAddress, pData, Size, 1000); //select register and write to it all in one
+}
+
+uint16_t cbDataLength(tCircularBuffer* cb)
+{
+	int32_t length = cb->write - cb->read;
+	if(length > 0)
+		return length;
+
+	//otherwise
+	length = cb->write + (length - cb->read);
+	return length;
+}
+
+void cbBumpNewDataIn(tCircularBuffer* cb, float val)
+{
+	cb->read = (cb->read + 1) & (cb->size - 1);
+	cb->buf[cb->write] = val;
+	cb->write = (cb->write + 1) & (cb->size -1);
+}
+
+int cbWrite(tCircularBuffer* cb, float data)
+{
+	if(cbDataLength(cb) == (cb->size - 1))
+	{
+		//return -1; //buffer full
+		cbBumpNewDataIn(cb, data);
+	}
+
+	//otherwise insert new data
+	cb->buf[cb->write] = data;
+	cb->write = (cb->write + 1) & (cb->size - 1); //this is possible because size is a power of 2
+}
+
+int cbRead(tCircularBuffer* cb, float* data)
+{
+	if(cbDataLength(cb) == 0)
+		return -1; //empty buffer
+
+	//otherwise return oldest data
+	*data = cb->buf[cb->read];
+	cb->read = (cb->read + 1) & (cb->size - 1); //this is possible because size is a power of 2
+}
+
+void accelRunningAverage(float* floatX, float* floatY, float* floatZ)
+{
+	static int len = 4; // must be a power of 2
+
+	static float x[len];
+	static float y[len];
+	static float z[len];
+
+	static tCircularBuffer cbx;
+	static tCircularBuffer cby;
+	static tCircularBuffer cbz;
+
+	cbx.buf = x;
+	cbx.size = len; // must be a power of 2
+
+	cby.buf = y;
+	cby.size = len; // must be a power of 2
+
+	cbz.buf = z;
+	cbz.size = len; // must be a power of 2
+
+
+	// only operate on buffers if they are full
+	if(cbDataLength(&cbx) < len)
+		return;
+	if(cbDataLength(&cby) < len)
+		return;
+	if(cbDataLength(&cbz) < len)
+		return;
+
+
 }
 
 /* USER CODE END 0 */
@@ -143,6 +217,10 @@ int main(void)
 
   readMPUreg(0x1C); //read accel config register
 
+  float avgX = 0;
+  float avgY = 0;
+  float avgZ = 0;
+
   uint32_t count=0;
   while (1)
   {
@@ -172,11 +250,27 @@ int main(void)
 	  volatile float floatZ = (float)accelZ * (float)(1.0/16384.0); //multiply reading with Full Scale value
 	  volatile float floatTemp = ((float)temp / 340.0) + 36.53;
 
+	  accelRunningAverage(&floatX, &floatY, &floatZ); // takes input and factors it into the running average for each variable
+
+	  float avgX += floatX / 3;
+	  float avgY += floatY / 3;
+	  float avgZ += floatZ / 3;
+
+	  if(count%3 != 0) // every 3rd iteration
+		  continue;
+
+
+
 	  uint8_t uartData[100];
 	  snprintf(uartData, sizeof(uartData), "%d<%f, %f, %f, %f>\r\n", count, floatX, floatY, floatZ, floatTemp);
 	  HAL_UART_Transmit(&huart4, uartData, 50, 0x00FF);  //TODO: adapt timeout value
 
 	  //HAL_Delay(200);
+	  // reset average
+	  avgX = 0;
+	  avgY = 0;
+	  avgZ = 0;
+
 	  count++;
 
     /* USER CODE END WHILE */
