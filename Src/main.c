@@ -133,36 +133,52 @@ int cbRead(tCircularBuffer* cb, float* data)
 	cb->read = (cb->read + 1) & (cb->size - 1); //this is possible because size is a power of 2
 }
 
+#define len 4 // must be a power of 2
 void accelRunningAverage(float* floatX, float* floatY, float* floatZ)
 {
-	static int len = 4; // must be a power of 2
-
+	// These static declarations should only run one time
 	static float x[len];
+	static int xWrite = 0;
+	static int xRead = len; //initialize to point to the end
 	static float y[len];
+	static int yWrite = 0;
+	static int yRead = len; //initialize to point to the end
 	static float z[len];
+	static int zWrite = 0;
+	static int zRead = len; //initialize to point to the end
 
-	static tCircularBuffer cbx;
-	static tCircularBuffer cby;
-	static tCircularBuffer cbz;
+	//insert new element
+	x[xWrite] = *floatX;
+	xWrite = (xWrite + 1) & (len - 1);
+	xRead = (xRead + 1) & (len - 1);
 
-	cbx.buf = x;
-	cbx.size = len; // must be a power of 2
+	y[yWrite] = *floatY;
+	yWrite = (yWrite + 1) & (len - 1);
+	yRead = (yRead + 1) & (len - 1);
 
-	cby.buf = y;
-	cby.size = len; // must be a power of 2
+	z[zWrite] = *floatZ;
+	zWrite = (zWrite + 1) & (len - 1);
+	zRead = (zRead + 1) & (len - 1);
 
-	cbz.buf = z;
-	cbz.size = len; // must be a power of 2
+	float runAvgX = 0;
+	float runAvgY = 0;
+	float runAvgZ = 0;
+	int readPtr = xRead;
+	for(int i=0; i < len; i++)
+	{
+		readPtr = xRead+i & (len - 1);
+		runAvgX += x[readPtr];
+		runAvgY += y[readPtr];
+		runAvgZ += z[readPtr];
+	}
 
+	runAvgX /= (float)len;
+	runAvgY /= (float)len;
+	runAvgZ /= (float)len;
 
-	// only operate on buffers if they are full
-	if(cbDataLength(&cbx) < len)
-		return;
-	if(cbDataLength(&cby) < len)
-		return;
-	if(cbDataLength(&cbz) < len)
-		return;
-
+	*floatX = runAvgX;
+	*floatY = runAvgY;
+	*floatZ = runAvgZ;
 
 }
 
@@ -252,14 +268,7 @@ int main(void)
 
 	  accelRunningAverage(&floatX, &floatY, &floatZ); // takes input and factors it into the running average for each variable
 
-	  float avgX += floatX / 3;
-	  float avgY += floatY / 3;
-	  float avgZ += floatZ / 3;
-
-	  if(count%3 != 0) // every 3rd iteration
-		  continue;
-
-
+	  // at this point I should have the running average of floatX,Y,Z according to accelRunningAverage(...)
 
 	  uint8_t uartData[100];
 	  snprintf(uartData, sizeof(uartData), "%d<%f, %f, %f, %f>\r\n", count, floatX, floatY, floatZ, floatTemp);
