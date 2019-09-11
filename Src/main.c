@@ -21,6 +21,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "circularBuffer.h"
+#include "stdio.h"
 //#include "stm32f4xx_hal.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -166,7 +167,7 @@ void accelRunningAverage(float* floatX, float* floatY, float* floatZ)
 	int readPtr = xRead;
 	for(int i=0; i < len; i++)
 	{
-		readPtr = xRead+i & (len - 1);
+		readPtr = (xRead+i) & (len - 1);
 		runAvgX += x[readPtr];
 		runAvgY += y[readPtr];
 		runAvgZ += z[readPtr];
@@ -179,7 +180,35 @@ void accelRunningAverage(float* floatX, float* floatY, float* floatZ)
 	*floatX = runAvgX;
 	*floatY = runAvgY;
 	*floatZ = runAvgZ;
+}
 
+void readCurrentAccelerationValues(float* floatX, float* floatY, float* floatZ)
+{
+	// Read x,y,z acceleration registers. TODO: guarantee that these are from same sample
+	volatile int16_t accelX = 0;
+	accelX = readMPUreg(0x3B); //read accel X MSB value
+	accelX = accelX << 8;
+	accelX |= (0x00FF) & readMPUreg(0x3C); //read accel X LSB value
+
+	volatile int16_t accelY = 0;
+	accelY = readMPUreg(0x3D);
+	accelY = accelY << 8;
+	accelY |= (0x00FF) & readMPUreg(0x3E); // LSB
+
+	volatile int16_t accelZ = 0;
+	accelZ = readMPUreg(0x3F);
+	accelZ = accelZ << 8;
+	accelZ |= (0x00FF) & readMPUreg(0x40); // LSB
+
+//	volatile int16_t temp = 0;
+//	temp = readMPUreg(0x41); // MSB
+//	temp = temp << 8;
+//	temp |= (0x00FF) & readMPUreg(0x42); // LSB
+
+	*floatX = (float)accelX * (float)(1.0/16384.0); //multiply reading with Full Scale value
+	*floatY = (float)accelY * (float)(1.0/16384.0); //multiply reading with Full Scale value
+	*floatZ = (float)accelZ * (float)(1.0/16384.0); //multiply reading with Full Scale value
+	//*floatTemp = ((float)temp / 340.0) + 36.53;
 }
 
 /* USER CODE END 0 */
@@ -223,6 +252,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  HAL_Delay(500); // TODO: is this necessary?
 
   //let's try to read a register over I2C
   readMPUreg(0x75);
@@ -233,54 +263,27 @@ int main(void)
 
   readMPUreg(0x1C); //read accel config register
 
-  float avgX = 0;
-  float avgY = 0;
-  float avgZ = 0;
-
   uint32_t count=0;
   while (1)
   {
-	  // Read x,y,z acceleration registers. TODO: guarantee that these are from same sample
-	  volatile int16_t accelX = 0;
-	  accelX = readMPUreg(0x3B); //read accel X MSB value
-	  accelX = accelX << 8;
-	  accelX |= (0x00FF) & readMPUreg(0x3C); //read accel X LSB value
+	  float avgAccelX, avgAccelY, avgAccelZ = 0;
 
-	  volatile int16_t accelY = 0;
-	  accelY = readMPUreg(0x3D);
-	  accelY = accelY << 8;
-	  accelY |= (0x00FF) & readMPUreg(0x3E); // LSB
-
-	  volatile int16_t accelZ = 0;
-	  accelZ = readMPUreg(0x3F);
-	  accelZ = accelZ << 8;
-	  accelZ |= (0x00FF) & readMPUreg(0x40); // LSB
-
-	  volatile int16_t temp = 0;
-	  temp = readMPUreg(0x41); // MSB
-	  temp = temp << 8;
-	  temp |= (0x00FF) & readMPUreg(0x42); // LSB
-
-	  volatile float floatX = (float)accelX * (float)(1.0/16384.0); //multiply reading with Full Scale value
-	  volatile float floatY = (float)accelY * (float)(1.0/16384.0); //multiply reading with Full Scale value
-	  volatile float floatZ = (float)accelZ * (float)(1.0/16384.0); //multiply reading with Full Scale value
-	  volatile float floatTemp = ((float)temp / 340.0) + 36.53;
-
-	  accelRunningAverage(&floatX, &floatY, &floatZ); // takes input and factors it into the running average for each variable
+	  // read acceleration, filter with a running average
+	  readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
+	  accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
 
 	  // at this point I should have the running average of floatX,Y,Z according to accelRunningAverage(...)
 
-	  uint8_t uartData[100];
-	  snprintf(uartData, sizeof(uartData), "%d<%f, %f, %f, %f>\r\n", count, floatX, floatY, floatZ, floatTemp);
-	  HAL_UART_Transmit(&huart4, uartData, 50, 0x00FF);  //TODO: adapt timeout value
+	  // derive velocity from acceleration
 
-	  //HAL_Delay(200);
-	  // reset average
-	  avgX = 0;
-	  avgY = 0;
-	  avgZ = 0;
+	  // print stuff out (a.k.a send to UART)
+	  uint8_t uartData[100];
+	  snprintf(uartData, sizeof(uartData), "<%ld, %f, %f, %f>\r\n", count, avgAccelX, avgAccelY, avgAccelZ);
+	  HAL_UART_Transmit(&huart4, uartData, 50, 0x00FF);  //TODO: choose the correct number of bytes to send
 
 	  count++;
+
+	  //HAL_Delay(200);
 
     /* USER CODE END WHILE */
 
