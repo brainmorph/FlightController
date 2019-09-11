@@ -211,6 +211,18 @@ void readCurrentAccelerationValues(float* floatX, float* floatY, float* floatZ)
 	//*floatTemp = ((float)temp / 340.0) + 36.53;
 }
 
+// returns the PWM equivalent of RPM value
+float pwm(float value)
+{
+	// map RPM value to pwm setting
+	float min = 0.0; // RPM
+	float max = 4000; // RPM
+
+	float slope = (255)/(max-min) ; // rise/run
+
+	return value * slope; // RPM * slope
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -270,14 +282,20 @@ int main(void)
   float vX, vY, vZ = 0;
   float deltaT = 0.010; // TODO: measure this with firmware timer
 
+  float envAccelX, envAccelY, envAccelZ = 0;
+
   // throw away a few samples at the beginning
   for(int i=0; i<20; i++)
   {
 	  // read acceleration, filter with a running average
 	  readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
 	  accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
-
   }
+
+  // use the samples at the beginning as calibration
+  envAccelX = avgAccelX;
+  envAccelY = avgAccelY;
+  envAccelZ = avgAccelZ;
 
   while (1)
   {
@@ -289,15 +307,34 @@ int main(void)
 	  // at this point I should have the running average of floatX,Y,Z according to accelRunningAverage(...)
 
 	  // derive velocity from acceleration
-	  vX = avgAccelX * deltaT + vX;
-	  vY = avgAccelY * deltaT + vY;
-	  vZ = avgAccelZ * deltaT + vZ;
+	  vX = (avgAccelX - envAccelX) * deltaT + vX; // subtract out calibration
+	  vY = (avgAccelY - envAccelY) * deltaT + vY; // subtract out calibration
+	  vZ = (avgAccelZ - envAccelZ) * deltaT + vZ; // subtract out calibration
+
+	  // calculate error
+	  float errorVZ = 0.0 - vZ; // my setpoint is 0 m/s for now.  + vZ because positive Z axis points down
+
+	  // PID (P only for now)
+	  float thrustRPM = 20000.0 * errorVZ;
+
+	  // convert to PWM
+	  int PWM = (int)pwm(thrustRPM);
+
+	  if(PWM < 0)
+		  PWM = 0;
+	  if(PWM > 255)
+		  PWM = 255;
+
+	  // send PWM to UART
+	  uint8_t uartData[70];
+	  snprintf(uartData, sizeof(uartData), "<%ld, %f.2,%3d, %3d, %3d, %3d>", count, vZ, PWM, PWM, PWM, PWM);
+	  HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);  //TODO: choose the correct number of bytes to send
 
 	  // print stuff out (a.k.a send to UART)
-	  uint8_t uartData[150];
-	  snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n", count, avgAccelX, avgAccelY, avgAccelZ,
-			  vX, vY, vZ);
-	  HAL_UART_Transmit(&huart4, uartData, 150, 0x00FF);  //TODO: choose the correct number of bytes to send
+//	  uint8_t uartData[150];
+//	  snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n", count, avgAccelX, avgAccelY, avgAccelZ,
+//			  vX, vY, vZ);
+//	  HAL_UART_Transmit(&huart4, uartData, 150, 0x00FF);  //TODO: choose the correct number of bytes to send
 
 	  count++;
 
