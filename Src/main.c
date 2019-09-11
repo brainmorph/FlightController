@@ -263,10 +263,24 @@ int main(void)
 
   readMPUreg(0x1C); //read accel config register
 
+
+
   uint32_t count=0;
+  float avgAccelX, avgAccelY, avgAccelZ = 0;
+  float vX, vY, vZ = 0;
+  float deltaT = 0.010; // TODO: measure this with firmware timer
+
+  // throw away a few samples at the beginning
+  for(int i=0; i<20; i++)
+  {
+	  // read acceleration, filter with a running average
+	  readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
+	  accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
+
+  }
+
   while (1)
   {
-	  float avgAccelX, avgAccelY, avgAccelZ = 0;
 
 	  // read acceleration, filter with a running average
 	  readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
@@ -275,11 +289,15 @@ int main(void)
 	  // at this point I should have the running average of floatX,Y,Z according to accelRunningAverage(...)
 
 	  // derive velocity from acceleration
+	  vX = avgAccelX * deltaT + vX;
+	  vY = avgAccelY * deltaT + vY;
+	  vZ = avgAccelZ * deltaT + vZ;
 
 	  // print stuff out (a.k.a send to UART)
-	  uint8_t uartData[100];
-	  snprintf(uartData, sizeof(uartData), "<%ld, %f, %f, %f>\r\n", count, avgAccelX, avgAccelY, avgAccelZ);
-	  HAL_UART_Transmit(&huart4, uartData, 50, 0x00FF);  //TODO: choose the correct number of bytes to send
+	  uint8_t uartData[150];
+	  snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n", count, avgAccelX, avgAccelY, avgAccelZ,
+			  vX, vY, vZ);
+	  HAL_UART_Transmit(&huart4, uartData, 150, 0x00FF);  //TODO: choose the correct number of bytes to send
 
 	  count++;
 
