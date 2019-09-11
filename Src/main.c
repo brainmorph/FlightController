@@ -306,10 +306,15 @@ int main(void)
 
 	  // at this point I should have the running average of floatX,Y,Z according to accelRunningAverage(...)
 
+	  // for fun let's deadband accelZ.
+	  float deadBandZ = (avgAccelZ - envAccelZ);
+	  if(deadBandZ < 0.2 && deadBandZ > -0.2)
+		  deadBandZ = 0;
+
 	  // derive velocity from acceleration
 	  vX = (avgAccelX - envAccelX) * deltaT + vX; // subtract out calibration
 	  vY = (avgAccelY - envAccelY) * deltaT + vY; // subtract out calibration
-	  vZ = (avgAccelZ - envAccelZ) * deltaT + vZ; // subtract out calibration
+	  vZ = deadBandZ * deltaT + vZ; // subtract out calibration
 
 	  // calculate error
 	  float errorVZ = 0.0 - vZ; // my setpoint is 0 m/s for now.  + vZ because positive Z axis points down
