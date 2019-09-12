@@ -223,6 +223,7 @@ float pwm(float value)
 	return value * slope; // RPM * slope
 }
 
+uint32_t NOW_MS = 0;
 /* USER CODE END 0 */
 
 /**
@@ -264,6 +265,10 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 0, 0); //Enable the peripheral IRQ
+  HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
+  HAL_TIM_Base_Start_IT(&htim6); //Start the timer
+
   HAL_Delay(500); // TODO: is this necessary?
 
   //let's try to read a register over I2C
@@ -332,7 +337,7 @@ int main(void)
 
 	  // send PWM to UART
 	  uint8_t uartData[70];
-	  snprintf(uartData, sizeof(uartData), "<%ld, %f.2,%3d, %3d, %3d, %3d>", count, vZ, PWM, PWM, PWM, PWM);
+	  snprintf(uartData, sizeof(uartData), "<%ld, %f.2,%3d, %3d, %3d, %3d, %d>", count, vZ, PWM, PWM, PWM, PWM, NOW_MS);
 	  HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);  //TODO: choose the correct number of bytes to send
 
 	  // print stuff out (a.k.a send to UART)
@@ -503,9 +508,10 @@ static void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 0;
+  //htim6.Init.Prescaler = 0;
+  htim6.Init.Prescaler = 159;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 0;
+  htim6.Init.Period = 99;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
@@ -610,6 +616,16 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void TIM6_DAC_IRQHandler(void) {
+	// Pass the control to HAL, which processes the IRQ
+	HAL_TIM_IRQHandler(&htim6);
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	// This callback is automatically called by the HAL on the UEV event
+	if(htim->Instance == TIM6)
+		NOW_MS++;
+}
 
 /* USER CODE END 4 */
 
