@@ -373,50 +373,45 @@ void dumbFunction(void)
 	//TODO: CLEAN UP ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   while (1)
   {
-	  //it2 = get_timer();    // Derive the cycle-count difference
-	  //it1 = it2 - it1;
+	  dumbFunction();
 
-	  //dumbFunction();
-	  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
 
-	  //it1 = it2;
+	  // read acceleration, filter with a running average
+	  readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
+	  accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
 
-//	  // read acceleration, filter with a running average
-//	  readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
-//	  accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
-//
-//	  // at this point I should have the running average of floatX,Y,Z according to accelRunningAverage(...)
-//
-//	  // for fun let's deadband accelZ.
-//	  float deadBandZ = (avgAccelZ - envAccelZ);
-//	  if(deadBandZ < 0.2 && deadBandZ > -0.2)
-//		  deadBandZ = 0;
-//
-//	  // derive velocity from acceleration
-//	  vX = (avgAccelX - envAccelX) * deltaT + vX; // subtract out calibration
-//	  vY = (avgAccelY - envAccelY) * deltaT + vY; // subtract out calibration
-//	  vZ = deadBandZ * deltaT + vZ; // subtract out calibration
-//
-//	  // calculate error
-//	  float errorVZ = 0.0 - vZ; // my setpoint is 0 m/s for now.  + vZ because positive Z axis points down
-//
-//	  // PID (P only for now)
-//	  float thrustRPM = 20000.0 * errorVZ;
-//
-//	  // convert to PWM
-//	  int PWM = (int)pwm(thrustRPM);
-//
-//	  if(PWM < 0)
-//		  PWM = 0;
-//	  if(PWM > 255)
-//		  PWM = 255;
-//
+	  // at this point I should have the running average of floatX,Y,Z according to accelRunningAverage(...)
+
+	  // for fun let's deadband accelZ.
+	  float deadBandZ = (avgAccelZ - envAccelZ);
+	  if(deadBandZ < 0.2 && deadBandZ > -0.2)
+		  deadBandZ = 0;
+
+	  // derive velocity from acceleration
+	  vX = (avgAccelX - envAccelX) * deltaT + vX; // subtract out calibration
+	  vY = (avgAccelY - envAccelY) * deltaT + vY; // subtract out calibration
+	  vZ = deadBandZ * deltaT + vZ; // subtract out calibration
+
+	  // calculate error
+	  float errorVZ = 0.0 - vZ; // my setpoint is 0 m/s for now.  + vZ because positive Z axis points down
+
+	  // PID (P only for now)
+	  float thrustRPM = 20000.0 * errorVZ;
+
+	  // convert to PWM
+	  int PWM = (int)pwm(thrustRPM);
+
+	  if(PWM < 0)
+		  PWM = 0;
+	  if(PWM > 255)
+		  PWM = 255;
+
 //	  // send PWM to UART
 //	  uint8_t uartData[70];
 //	  snprintf(uartData, sizeof(uartData), "<%ld, %f.2,%3d, %3d, %3d, %3d, %d>", count, vZ, PWM, PWM, PWM, PWM, NOW_MS);
 //	  HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);  //TODO: choose the correct number of bytes to send
-
-	  // print stuff out (a.k.a send to UART)
+//
+//	 //print stuff out (a.k.a send to UART)
 //	  uint8_t uartData[150];
 //	  snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n", count, avgAccelX, avgAccelY, avgAccelZ,
 //			  vX, vY, vZ);
@@ -592,9 +587,9 @@ static void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 0;
+  htim6.Init.Prescaler = 1000;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 0;
+  htim6.Init.Period = 80;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
@@ -718,7 +713,11 @@ void TIM6_DAC_IRQHandler(void) {
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	// This callback is automatically called by the HAL on the UEV event
 	if(htim->Instance == TIM6)
+	{
 		NOW_MS++;
+
+		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
+	}
 }
 
 /* USER CODE END 4 */
