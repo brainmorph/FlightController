@@ -232,18 +232,6 @@ uint32_t NOW_MS = 0;
 uint32_t it1, it2;      // start and stop flag
 //stop_timer();               // If timer is not needed any more, stop
 
-void user_pwm_setvalue(uint32_t channel, uint16_t value)
-{
-    TIM_OC_InitTypeDef sConfigOC;
-
-    sConfigOC.OCMode = TIM_OCMODE_PWM1;
-    sConfigOC.Pulse = value;
-    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-//    HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1);
-    HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, channel);
-    HAL_TIM_PWM_Start(&htim4, channel);
-}
 //TODO: CLEAN UP^^^^^^^^^^^^^^^
 /* USER CODE END 0 */
 
@@ -354,19 +342,10 @@ void dumbFunction(void)
 
 	//HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
 
-	//	  user_pwm_setvalue(TIM_CHANNEL_1, 500 + counter);
-	//	  user_pwm_setvalue(TIM_CHANNEL_2, 5000 + counter);
-	//	  user_pwm_setvalue(TIM_CHANNEL_3, 50000 + counter);
-	//	  user_pwm_setvalue(TIM_CHANNEL_4, counter);
-
-	if(counter % 1000 != 0) // slow this loop down
+	if(counter % 10 != 0) // slow this loop down
 	  return;
 
 	counter2++;
-//	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, counter2);
-//	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, counter2);
-//	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, counter2);
-//	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, counter2);
 
 	//Just set the register directly
 	htim4.Instance->CCR1 = counter2;
@@ -376,44 +355,87 @@ void dumbFunction(void)
 
 	it1 = it2;
 }
+
+// each setting represents motor throttle from 0 to 100%
+void setPWM(int motor1, int motor2, int motor3, int motor4)
+{
+	counter++;
+	if(counter < 0)
+		counter = 0;
+	if(counter % 10 != 0) // slow down PWM updates
+		return;
+
+	// TODO: update min and max values to match new timer settings (I want higher resolution control)
+	// TODO: new timer will be 80MHz with pre-scalar of 20 and counter period 80,000
+	int max = 40; // based on 80MHz TIM4 with pre-scalar of 4000 and counter period 400
+	int min = 20; // based on 80MHz TIM4 with pre-scalar of 4000 and counter period 400
+
+	int range = max - min;
+
+	// motor 1
+	int setting = (motor1/100.0) * (float)range;
+	setting += min; // add new value to minimum setting
+	htim4.Instance->CCR1 = setting;
+
+	// motor 2
+	setting = (motor2/100.0) * (float)range;
+	setting += min;
+	htim4.Instance->CCR2 = setting;
+
+	// motor 3
+	setting = (motor3/100.0) * (float)range;
+	setting += min;
+	htim4.Instance->CCR3 = setting;
+
+	// motor 4
+	setting = (motor4/100.0) * (float)range;
+	setting += min;
+	htim4.Instance->CCR4 = setting;
+}
 	//TODO: CLEAN UP ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   while (1)
   {
-	  dumbFunction();
-	  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
+		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
 
-	  // read acceleration, filter with a running average
-	  readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
-	  accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
+		// read acceleration, filter with a running average
+		readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
+		accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
 
-	  // at this point I should have the running average of floatX,Y,Z according to accelRunningAverage(...)
+		// at this point I should have the running average of floatX,Y,Z according to accelRunningAverage(...)
 
-	  // for fun let's deadband accelZ.
-	  float deadBandZ = (avgAccelZ - envAccelZ);
-	  if(deadBandZ < 0.2 && deadBandZ > -0.2)
+		// for fun let's deadband accelZ.
+		float deadBandZ = (avgAccelZ - envAccelZ);
+		if(deadBandZ < 0.2 && deadBandZ > -0.2)
 		  deadBandZ = 0;
 
-	  // derive velocity from acceleration
-	  vX = (avgAccelX - envAccelX) * deltaT + vX; // subtract out calibration
-	  vY = (avgAccelY - envAccelY) * deltaT + vY; // subtract out calibration
-	  vZ = deadBandZ * deltaT + vZ; // subtract out calibration
+		// derive velocity from acceleration
+		vX = (avgAccelX - envAccelX) * deltaT + vX; // subtract out calibration
+		vY = (avgAccelY - envAccelY) * deltaT + vY; // subtract out calibration
+		vZ = deadBandZ * deltaT + vZ; // subtract out calibration
 
-	  volatile int dummy = 0;
-	  dummy++;
+		volatile int dummy = 0;
+		dummy++;
 
-	  // calculate error
-	  float errorVZ = 0.0 - vZ; // my setpoint is 0 m/s for now.  + vZ because positive Z axis points down
+		// calculate error
+		float errorVZ = 0.0 - vZ; // my setpoint is 0 m/s for now.  + vZ because positive Z axis points down
 
-	  // PID (P only for now)
-	  float thrustRPM = 20000.0 * errorVZ;
+		// PID (P only for now)
+		float thrustRPM = 20000.0 * errorVZ;
 
-	  // convert to PWM
-	  int PWM = (int)pwm(thrustRPM);
+		// convert to PWM
+		int PWM = (int)pwm(thrustRPM);
 
-	  if(PWM < 0)
+		if(PWM < 0)
 		  PWM = 0;
-	  if(PWM > 255)
+		if(PWM > 255)
 		  PWM = 255;
+
+		// TODO: clean this mess up
+		if(PWM > 0)
+			PWM = 25;
+
+		setPWM(PWM, PWM, PWM, PWM);
+
 
 //	  // send PWM to UART
 //	  uint8_t uartData[70];
