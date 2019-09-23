@@ -374,7 +374,7 @@ void dumbFunction(void)
   while (1)
   {
 	  dumbFunction();
-
+	  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
 
 	  // read acceleration, filter with a running average
 	  readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
@@ -391,6 +391,9 @@ void dumbFunction(void)
 	  vX = (avgAccelX - envAccelX) * deltaT + vX; // subtract out calibration
 	  vY = (avgAccelY - envAccelY) * deltaT + vY; // subtract out calibration
 	  vZ = deadBandZ * deltaT + vZ; // subtract out calibration
+
+	  volatile int dummy = 0;
+	  dummy++;
 
 	  // calculate error
 	  float errorVZ = 0.0 - vZ; // my setpoint is 0 m/s for now.  + vZ because positive Z axis points down
@@ -716,7 +719,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	{
 		NOW_MS++;
 
-		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
+		//HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
 	}
 }
 
