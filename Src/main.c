@@ -346,8 +346,8 @@ void dumbFunction(void)
 	counter++;
 	if(counter < 0)
 	  counter = 0;
-	if(counter2 < 0)
-	  counter2 = 0;
+	if(counter2 < 20 || counter2 > 38)
+	  counter2 = 20;
 
 	it2 = get_timer();    // Derive the cycle-count difference
 	it1 = it2 - it1;
@@ -359,14 +359,20 @@ void dumbFunction(void)
 	//	  user_pwm_setvalue(TIM_CHANNEL_3, 50000 + counter);
 	//	  user_pwm_setvalue(TIM_CHANNEL_4, counter);
 
-//	if(counter % 10 != 0)
-//	  return;
+	if(counter % 1000 != 0) // slow this loop down
+	  return;
 
 	counter2++;
-	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, counter2);
-	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, 5000 + counter2);
-	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, 50000 + counter2);
-	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, counter2);
+//	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, counter2);
+//	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, counter2);
+//	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, counter2);
+//	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, counter2);
+
+	//Just set the register directly
+	htim4.Instance->CCR1 = counter2;
+	htim4.Instance->CCR2 = counter2;
+	htim4.Instance->CCR3 = counter2;
+	htim4.Instance->CCR4 = counter2;
 
 	it1 = it2;
 }
@@ -527,9 +533,9 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 0;
+  htim4.Init.Prescaler = 4000;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 60000;
+  htim4.Init.Period = 400;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
@@ -550,17 +556,17 @@ static void MX_TIM4_Init(void)
   {
     Error_Handler();
   }
-  sConfigOC.Pulse = 5000;
+  sConfigOC.Pulse = 600;
   if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
-  sConfigOC.Pulse = 50000;
+  sConfigOC.Pulse = 700;
   if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
   {
     Error_Handler();
   }
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 800;
   if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
