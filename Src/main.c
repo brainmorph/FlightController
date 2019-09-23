@@ -210,6 +210,29 @@ void readCurrentAccelerationValues(float* floatX, float* floatY, float* floatZ)
 	//*floatTemp = ((float)temp / 340.0) + 36.53;
 }
 
+void readCurrentGyroValues(float* floatX, float* floatY, float* floatZ)
+{
+	// Read x,y,z acceleration registers. TODO: guarantee that these are from same sample
+	volatile int16_t gyroX = 0;
+	gyroX = readMPUreg(0x43); //read accel X MSB value
+	gyroX = gyroX << 8;
+	gyroX |= (0x00FF) & readMPUreg(0x44); //read gyro X LSB value
+
+	volatile int16_t gyroY = 0;
+	gyroY = readMPUreg(0x45);
+	gyroY = gyroY << 8;
+	gyroY |= (0x00FF) & readMPUreg(0x46); // LSB
+
+	volatile int16_t gyroZ = 0;
+	gyroZ = readMPUreg(0x47);
+	gyroZ = gyroZ << 8;
+	gyroZ |= (0x00FF) & readMPUreg(0x48); // LSB
+
+	*floatX = (float)gyroX * (float)(1.0/131.0); //multiply reading with Full Scale value
+	*floatY = (float)gyroY * (float)(1.0/131.0); //multiply reading with Full Scale value
+	*floatZ = (float)gyroZ * (float)(1.0/131.0); //multiply reading with Full Scale value
+}
+
 // returns the PWM equivalent of RPM value
 float pwm(float value)
 {
@@ -435,6 +458,12 @@ void setPWM(int motor1, int motor2, int motor3, int motor4)
 			PWM = 25;
 
 		setPWM(PWM, PWM, PWM, PWM);
+
+		float gyroX, gyroY, gyroZ;
+		readCurrentGyroValues(&gyroX, &gyroY, &gyroZ);
+		uint8_t uartData[150];
+		snprintf(uartData, sizeof(uartData), "<%ld, %f, %f, %f>\r\n", count, gyroX, gyroY, gyroZ);
+		HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);
 
 
 //	  // send PWM to UART
