@@ -316,11 +316,12 @@ int main(void)
 
 
   uint32_t count=0;
-  float avgAccelX, avgAccelY, avgAccelZ, gyroX, gyroY, gyroZ = 0;
-  float vX, vY, vZ = 0;
+  float avgAccelX=0, avgAccelY=0, avgAccelZ=0, gyroX=0, gyroY=0, gyroZ=0;
+  float vX=0, vY=0, vZ=0;
+  float aRoll=0, aPitch=0, aYaw=0; // angles with respect to each axis
   float deltaT = 0.010; // TODO: measure this with firmware timer
 
-  float envAccelX, envAccelY, envAccelZ, envGyroX, envGyroY, envGyroZ = 0;
+  float envAccelX=0, envAccelY=0, envAccelZ=0, envGyroX=0, envGyroY=0, envGyroZ = 0;
 
   // throw away a few samples at the beginning
   for(int i=0; i<20; i++)
@@ -466,15 +467,20 @@ void setPWM(int motor1, int motor2, int motor3, int motor4)
 		float deadBandGX = gyroX - envGyroX;
 		float deadBandGY = gyroY - envGyroY;
 		float deadBandGZ = gyroZ - envGyroZ;
-		if(deadBandGX > -3 && deadBandGX < 3)
+		if(deadBandGX > -6 && deadBandGX < 6)
 			deadBandGX = 0;
-		if(deadBandGY > -3 && deadBandGY < 3)
+		if(deadBandGY > -6 && deadBandGY < 6)
 			deadBandGY = 0;
-		if(deadBandGZ > -3 && deadBandGZ < 3)
+		if(deadBandGZ > -6 && deadBandGZ < 6)
 			deadBandGZ = 0;
 
+		// derive orientation angle from angular velocity
+		aRoll = -deadBandGX * deltaT + aRoll;
+		aPitch = -deadBandGY * deltaT + aPitch;
+		aYaw = -deadBandGZ * deltaT + aYaw;
+
 		uint8_t uartData[150] = {0};
-		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f>\r\n", count, deadBandGX, deadBandGY, deadBandGZ);
+		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f>\r\n", count, aRoll, aPitch, aYaw);
 		HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);
 
 
