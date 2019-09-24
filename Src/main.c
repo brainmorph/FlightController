@@ -390,6 +390,26 @@ void setPWM(int motor1, int motor2, int motor3, int motor4)
 	if(counter % 10 != 0) // slow down PWM updates
 		return;
 
+	// clip min/max motor output
+	if(motor1 < 0)
+		motor1 = 0;
+	if(motor2 < 0)
+		motor2 = 0;
+	if(motor3 < 0)
+		motor3 = 0;
+	if(motor4 < 0)
+		motor4 = 0;
+
+	if(motor1 > 25)
+		motor1 = 25;
+	if(motor2 > 25)
+		motor2 = 25;
+	if(motor3 > 25)
+		motor3 = 25;
+	if(motor4 > 25)
+		motor4 = 25;
+
+
 	// TODO: update min and max values to match new timer settings (I want higher resolution control)
 	// TODO: new timer will be 80MHz with pre-scalar of 20 and counter period 80,000
 	int max = 40; // based on 80MHz TIM4 with pre-scalar of 4000 and counter period 400
@@ -416,6 +436,16 @@ void setPWM(int motor1, int motor2, int motor3, int motor4)
 	setting = (motor4/100.0) * (float)range;
 	setting += min;
 	htim4.Instance->CCR4 = setting;
+}
+
+void mixPWM(float thrust, float roll, float pitch, float yaw)
+{
+	float FR = thrust + yaw + pitch + roll;
+	float FL = thrust - yaw + pitch - roll;
+	float BR = thrust - yaw - pitch + roll;
+	float BL = thrust + yaw - pitch - roll;
+
+	setPWM(FL, FR, BR, BL);
 }
 	//TODO: CLEAN UP ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   while (1)
@@ -456,11 +486,6 @@ void setPWM(int motor1, int motor2, int motor3, int motor4)
 		if(PWM > 255)
 		  PWM = 255;
 
-		// TODO: clean this mess up
-		if(PWM > 0)
-			PWM = 25;
-
-		setPWM(PWM, PWM, PWM, PWM);
 
 		// let's calculate gyro PID separately for now
 		readCurrentGyroValues(&gyroX, &gyroY, &gyroZ);
@@ -479,9 +504,24 @@ void setPWM(int motor1, int motor2, int motor3, int motor4)
 		aPitch = -deadBandGY * deltaT + aPitch;
 		aYaw = -deadBandGZ * deltaT + aYaw;
 
+		// calculate error terms
+		float errorARoll = 0.0 - aRoll; // my setpoint is 0
+		float errorAPitch = 0.0 - aPitch; // my setpoint is 0
+		float errorAYaw = 0.0 - aYaw; // my setpoint is 0
+
+		// calculate angular command (proportional) terms
+		float rollCmd = 1.0 * errorARoll;
+		float pitchCmd = 1.0 * errorAPitch;
+		float yawCmd = 1.0 * errorAYaw;
+
+		float thrustCmd = 0;
+		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
+
 		uint8_t uartData[150] = {0};
-		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f>\r\n", count, aRoll, aPitch, aYaw);
+		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n", count,
+				aRoll, aPitch, aYaw, rollCmd, pitchCmd, yawCmd);
 		HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);
+
 
 
 //	  // send PWM to UART
