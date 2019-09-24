@@ -316,11 +316,11 @@ int main(void)
 
 
   uint32_t count=0;
-  float avgAccelX, avgAccelY, avgAccelZ = 0;
+  float avgAccelX, avgAccelY, avgAccelZ, gyroX, gyroY, gyroZ = 0;
   float vX, vY, vZ = 0;
   float deltaT = 0.010; // TODO: measure this with firmware timer
 
-  float envAccelX, envAccelY, envAccelZ = 0;
+  float envAccelX, envAccelY, envAccelZ, envGyroX, envGyroY, envGyroZ = 0;
 
   // throw away a few samples at the beginning
   for(int i=0; i<20; i++)
@@ -328,6 +328,7 @@ int main(void)
 	  // read acceleration, filter with a running average
 	  readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
 	  accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
+	  readCurrentGyroValues(&envGyroX, &envGyroY, &envGyroZ);
   }
 
   // use the samples at the beginning as calibration
@@ -424,6 +425,7 @@ void setPWM(int motor1, int motor2, int motor3, int motor4)
 		readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
 		accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
 
+
 		// at this point I should have the running average of floatX,Y,Z according to accelRunningAverage(...)
 
 		// for fun let's deadband accelZ.
@@ -459,10 +461,20 @@ void setPWM(int motor1, int motor2, int motor3, int motor4)
 
 		setPWM(PWM, PWM, PWM, PWM);
 
-		float gyroX, gyroY, gyroZ;
+		// let's calculate gyro PID separately for now
 		readCurrentGyroValues(&gyroX, &gyroY, &gyroZ);
-		uint8_t uartData[150];
-		snprintf(uartData, sizeof(uartData), "<%ld, %f, %f, %f>\r\n", count, gyroX, gyroY, gyroZ);
+		float deadBandGX = gyroX - envGyroX;
+		float deadBandGY = gyroY - envGyroY;
+		float deadBandGZ = gyroZ - envGyroZ;
+		if(deadBandGX > -3 && deadBandGX < 3)
+			deadBandGX = 0;
+		if(deadBandGY > -3 && deadBandGY < 3)
+			deadBandGY = 0;
+		if(deadBandGZ > -3 && deadBandGZ < 3)
+			deadBandGZ = 0;
+
+		uint8_t uartData[150] = {0};
+		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f>\r\n", count, deadBandGX, deadBandGY, deadBandGZ);
 		HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);
 
 
