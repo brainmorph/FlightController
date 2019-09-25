@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "circularbuffer.h"
+#include "math.h"
 
 /* USER CODE END Includes */
 
@@ -282,6 +283,7 @@ void readCurrentGyroValues(float* floatX, float* floatY, float* floatZ)
 }
 
 float accelLpf = 0;
+float accelRollLpf = 0;
 float gyroLpf = 0;
 float lpfSetting = 0.01; // how much of the new value to use
 void lpf(float* valueSoFar, float newSample)
@@ -558,6 +560,11 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		// try to Low Pass Filter
 		lpf(&gyroLpf, gyroY); // lpf roll
 
+		// calculate roll angle from acceleration
+		float accelRoll = -1.0 * atan2f(avgAccelY, avgAccelZ); // sign flip to align with accelerometer orientation
+		accelRoll *= (180.0 / 3.1415); // convert to degrees
+		lpf(&accelRollLpf, accelRoll);
+
 		float deadBandGX = gyroX - envGyroX;
 		float deadBandGY = gyroY - envGyroY;
 		float deadBandGZ = gyroZ - envGyroZ;
@@ -597,7 +604,8 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
 
 		uint8_t uartData[150] = {0};
-		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f>\r\n", count, gyroY, gyroLpf);
+		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f>\r\n",
+				count, avgAccelY, avgAccelZ, accelRoll, accelRollLpf);
 		HAL_UART_Transmit(&huart4, uartData, 40, 0x00FF);
 
 //		uint8_t uartData[150] = {0};
