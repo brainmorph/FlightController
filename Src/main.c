@@ -133,48 +133,48 @@ int cbRead(tCircularBuffer* cb, float* data)
 	cb->read = (cb->read + 1) & (cb->size - 1); //this is possible because size is a power of 2
 }
 
-#define len 4 // must be a power of 2
+#define accelRunningLen 4 // must be a power of 2
 void accelRunningAverage(float* floatX, float* floatY, float* floatZ)
 {
 	// These static declarations should only run one time
-	static float x[len];
+	static float x[accelRunningLen];
 	static int xWrite = 0;
-	static int xRead = len; //initialize to point to the end
-	static float y[len];
+	static int xRead = accelRunningLen; //initialize to point to the end
+	static float y[accelRunningLen];
 	static int yWrite = 0;
-	static int yRead = len; //initialize to point to the end
-	static float z[len];
+	static int yRead = accelRunningLen; //initialize to point to the end
+	static float z[accelRunningLen];
 	static int zWrite = 0;
-	static int zRead = len; //initialize to point to the end
+	static int zRead = accelRunningLen; //initialize to point to the end
 
 	//insert new element
 	x[xWrite] = *floatX;
-	xWrite = (xWrite + 1) & (len - 1);
-	xRead = (xRead + 1) & (len - 1);
+	xWrite = (xWrite + 1) & (accelRunningLen - 1);
+	xRead = (xRead + 1) & (accelRunningLen - 1);
 
 	y[yWrite] = *floatY;
-	yWrite = (yWrite + 1) & (len - 1);
-	yRead = (yRead + 1) & (len - 1);
+	yWrite = (yWrite + 1) & (accelRunningLen - 1);
+	yRead = (yRead + 1) & (accelRunningLen - 1);
 
 	z[zWrite] = *floatZ;
-	zWrite = (zWrite + 1) & (len - 1);
-	zRead = (zRead + 1) & (len - 1);
+	zWrite = (zWrite + 1) & (accelRunningLen - 1);
+	zRead = (zRead + 1) & (accelRunningLen - 1);
 
 	float runAvgX = 0;
 	float runAvgY = 0;
 	float runAvgZ = 0;
 	int readPtr = xRead;
-	for(int i=0; i < len; i++)
+	for(int i=0; i < accelRunningLen; i++)
 	{
-		readPtr = (xRead+i) & (len - 1);
+		readPtr = (xRead+i) & (accelRunningLen - 1); // wrap around after incrementing
 		runAvgX += x[readPtr];
 		runAvgY += y[readPtr];
 		runAvgZ += z[readPtr];
 	}
 
-	runAvgX /= (float)len;
-	runAvgY /= (float)len;
-	runAvgZ /= (float)len;
+	runAvgX /= (float)accelRunningLen;
+	runAvgY /= (float)accelRunningLen;
+	runAvgZ /= (float)accelRunningLen;
 
 	*floatX = runAvgX;
 	*floatY = runAvgY;
@@ -208,6 +208,54 @@ void readCurrentAccelerationValues(float* floatX, float* floatY, float* floatZ)
 	*floatY = (float)accelY * (float)(1.0/16384.0); //multiply reading with Full Scale value
 	*floatZ = (float)accelZ * (float)(1.0/16384.0); //multiply reading with Full Scale value
 	//*floatTemp = ((float)temp / 340.0) + 36.53;
+}
+
+#define gyroRunningLen 4 // must be a power of 2
+void gyroRunningAverage(float* floatX, float* floatY, float* floatZ)
+{
+	// These static declarations should only run one time
+	static float x[gyroRunningLen];
+	static int xWrite = 0;
+	static int xRead = gyroRunningLen; //initialize to point to the end
+	static float y[gyroRunningLen];
+	static int yWrite = 0;
+	static int yRead = gyroRunningLen; //initialize to point to the end
+	static float z[gyroRunningLen];
+	static int zWrite = 0;
+	static int zRead = gyroRunningLen; //initialize to point to the end
+
+	//insert new element
+	x[xWrite] = *floatX;
+	xWrite = (xWrite + 1) & (gyroRunningLen - 1);
+	xRead = (xRead + 1) & (gyroRunningLen - 1);
+
+	y[yWrite] = *floatY;
+	yWrite = (yWrite + 1) & (gyroRunningLen - 1);
+	yRead = (yRead + 1) & (gyroRunningLen - 1);
+
+	z[zWrite] = *floatZ;
+	zWrite = (zWrite + 1) & (gyroRunningLen - 1);
+	zRead = (zRead + 1) & (gyroRunningLen - 1);
+
+	float runAvgX = 0;
+	float runAvgY = 0;
+	float runAvgZ = 0;
+	int readPtr = xRead;
+	for(int i=0; i < gyroRunningLen; i++)
+	{
+		readPtr = (xRead+i) & (gyroRunningLen - 1); // wrap around after incrementing
+		runAvgX += x[readPtr];
+		runAvgY += y[readPtr];
+		runAvgZ += z[readPtr];
+	}
+
+	runAvgX /= (float)gyroRunningLen;
+	runAvgY /= (float)gyroRunningLen;
+	runAvgZ /= (float)gyroRunningLen;
+
+	*floatX = runAvgX;
+	*floatY = runAvgY;
+	*floatZ = runAvgZ;
 }
 
 void readCurrentGyroValues(float* floatX, float* floatY, float* floatZ)
@@ -489,14 +537,18 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 
 		// let's calculate gyro PID separately for now
 		readCurrentGyroValues(&gyroX, &gyroY, &gyroZ);
+		gyroRunningAverage(&gyroX, &gyroY, &gyroZ); // takes input and factors it into the running average for each variable
+
 		float deadBandGX = gyroX - envGyroX;
 		float deadBandGY = gyroY - envGyroY;
 		float deadBandGZ = gyroZ - envGyroZ;
-//		if(deadBandGX > -3 && deadBandGX < 3)
+
+		// deadband to get rid of additions from quad vibration
+//		if(deadBandGX > -0.5 && deadBandGX < 0.5)
 //			deadBandGX = 0;
-//		if(deadBandGY > -3 && deadBandGY < 3)
+//		if(deadBandGY > -0.5 && deadBandGY < 0.5)
 //			deadBandGY = 0;
-//		if(deadBandGZ > -3 && deadBandGZ < 3)
+//		if(deadBandGZ > -0.5 && deadBandGZ < 0.5)
 //			deadBandGZ = 0;
 
 		// derive orientation angle from angular velocity
