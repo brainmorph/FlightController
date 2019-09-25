@@ -492,11 +492,11 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		float deadBandGX = gyroX - envGyroX;
 		float deadBandGY = gyroY - envGyroY;
 		float deadBandGZ = gyroZ - envGyroZ;
-		if(deadBandGX > -0.5 && deadBandGX < 0.5)
+		if(deadBandGX > -3 && deadBandGX < 3)
 			deadBandGX = 0;
-		if(deadBandGY > -0.5 && deadBandGY < 0.5)
+		if(deadBandGY > -3 && deadBandGY < 3)
 			deadBandGY = 0;
-		if(deadBandGZ > -0.5 && deadBandGZ < 0.5)
+		if(deadBandGZ > -3 && deadBandGZ < 3)
 			deadBandGZ = 0;
 
 		// derive orientation angle from angular velocity
@@ -510,12 +510,19 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		float errorAYaw = 0.0 - aYaw; // my setpoint is 0
 
 		// calculate angular command (proportional) terms
-		float kp = 1.5;
+		float kp = 3.0;
 		float rollCmd = kp * errorARoll;
 		float pitchCmd = kp * errorAPitch;
 		float yawCmd = 0; // kp * errorAYaw;
 
-		float thrustCmd = 0;
+		float thrustCmd = 15;
+
+		// add motor deadtime
+		if(NOW_MS < 15000)
+		{
+			thrustCmd = rollCmd = pitchCmd = 0;
+		}
+
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
 
 		uint8_t uartData[150] = {0};
