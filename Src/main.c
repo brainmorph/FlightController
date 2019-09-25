@@ -510,9 +510,10 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		float errorAYaw = 0.0 - aYaw; // my setpoint is 0
 
 		// calculate angular command (proportional) terms
-		float rollCmd = 1.0 * errorARoll;
-		float pitchCmd = 1.0 * errorAPitch;
-		float yawCmd = 1.0 * errorAYaw;
+		float kp = 1.5;
+		float rollCmd = kp * errorARoll;
+		float pitchCmd = kp * errorAPitch;
+		float yawCmd = kp * errorAYaw;
 
 		float thrustCmd = 0;
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
