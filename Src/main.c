@@ -281,6 +281,18 @@ void readCurrentGyroValues(float* floatX, float* floatY, float* floatZ)
 	*floatZ = (float)gyroZ * (float)(1.0/131.0); //multiply reading with Full Scale value
 }
 
+float accelLpf = 0;
+float gyroLpf = 0;
+float lpfSetting = 0.01; // how much of the new value to use
+void lpf(float* valueSoFar, float newSample)
+{
+	float calc = *valueSoFar;
+	calc = (1.0 - lpfSetting) * calc; // take a fraction of the value so far
+	calc += lpfSetting * newSample; // add it to a fraction of the new sample
+
+	*valueSoFar = calc;
+}
+
 // returns the PWM equivalent of RPM value
 float pwm(float value)
 {
@@ -377,13 +389,17 @@ int main(void)
 	  // read acceleration, filter with a running average
 	  readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
 	  accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
-	  readCurrentGyroValues(&envGyroX, &envGyroY, &envGyroZ);
+	  readCurrentGyroValues(&gyroX, &gyroY, &gyroZ);
+	  gyroRunningAverage(&gyroX, &gyroY, &gyroZ);
   }
 
   // use the samples at the beginning as calibration
   envAccelX = avgAccelX;
   envAccelY = avgAccelY;
   envAccelZ = avgAccelZ;
+  envGyroX = gyroX;
+  envGyroY = gyroY;
+  envGyroZ = gyroZ;
 
   //TODO: CLEAN UPVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 	start_timer();          // start the timer.
@@ -539,6 +555,9 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		readCurrentGyroValues(&gyroX, &gyroY, &gyroZ);
 		gyroRunningAverage(&gyroX, &gyroY, &gyroZ); // takes input and factors it into the running average for each variable
 
+		// try to Low Pass Filter
+		lpf(&gyroLpf, gyroY); // lpf roll
+
 		float deadBandGX = gyroX - envGyroX;
 		float deadBandGY = gyroY - envGyroY;
 		float deadBandGZ = gyroZ - envGyroZ;
@@ -578,22 +597,14 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
 
 		uint8_t uartData[150] = {0};
-		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n", count,
-				aRoll, aPitch, aYaw, rollCmd, pitchCmd, yawCmd);
-		HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);
+		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f>\r\n", count, gyroY, gyroLpf);
+		HAL_UART_Transmit(&huart4, uartData, 40, 0x00FF);
 
+//		uint8_t uartData[150] = {0};
+//		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n", count,
+//				aRoll, aPitch, aYaw, rollCmd, pitchCmd, yawCmd);
+//		HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);
 
-
-//	  // send PWM to UART
-//	  uint8_t uartData[70];
-//	  snprintf(uartData, sizeof(uartData), "<%ld, %f.2,%3d, %3d, %3d, %3d, %d>", count, vZ, PWM, PWM, PWM, PWM, NOW_MS);
-//	  HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);  //TODO: choose the correct number of bytes to send
-//
-//	 //print stuff out (a.k.a send to UART)
-//	  uint8_t uartData[150];
-//	  snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n", count, avgAccelX, avgAccelY, avgAccelZ,
-//			  vX, vY, vZ);
-//	  HAL_UART_Transmit(&huart4, uartData, 150, 0x00FF);  //TODO: choose the correct number of bytes to send
 
 	  count++;
 
