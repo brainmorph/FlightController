@@ -492,12 +492,12 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		float deadBandGX = gyroX - envGyroX;
 		float deadBandGY = gyroY - envGyroY;
 		float deadBandGZ = gyroZ - envGyroZ;
-		if(deadBandGX > -3 && deadBandGX < 3)
-			deadBandGX = 0;
-		if(deadBandGY > -3 && deadBandGY < 3)
-			deadBandGY = 0;
-		if(deadBandGZ > -3 && deadBandGZ < 3)
-			deadBandGZ = 0;
+//		if(deadBandGX > -3 && deadBandGX < 3)
+//			deadBandGX = 0;
+//		if(deadBandGY > -3 && deadBandGY < 3)
+//			deadBandGY = 0;
+//		if(deadBandGZ > -3 && deadBandGZ < 3)
+//			deadBandGZ = 0;
 
 		// derive orientation angle from angular velocity
 		aRoll = -deadBandGX * deltaT + aRoll;
@@ -510,7 +510,7 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		float errorAYaw = 0.0 - aYaw; // my setpoint is 0
 
 		// calculate angular command (proportional) terms
-		float kp = 3.0;
+		float kp = 0.5;
 		float rollCmd = kp * errorARoll;
 		float pitchCmd = kp * errorAPitch;
 		float yawCmd = 0; // kp * errorAYaw;
