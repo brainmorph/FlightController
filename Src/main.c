@@ -492,11 +492,11 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		float deadBandGX = gyroX - envGyroX;
 		float deadBandGY = gyroY - envGyroY;
 		float deadBandGZ = gyroZ - envGyroZ;
-		if(deadBandGX > -6 && deadBandGX < 6)
+		if(deadBandGX > -0.5 && deadBandGX < 0.5)
 			deadBandGX = 0;
-		if(deadBandGY > -6 && deadBandGY < 6)
+		if(deadBandGY > -0.5 && deadBandGY < 0.5)
 			deadBandGY = 0;
-		if(deadBandGZ > -6 && deadBandGZ < 6)
+		if(deadBandGZ > -0.5 && deadBandGZ < 0.5)
 			deadBandGZ = 0;
 
 		// derive orientation angle from angular velocity
