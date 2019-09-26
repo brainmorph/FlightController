@@ -595,7 +595,7 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		aYaw = -deadBandGZ * deltaT + aYaw;
 
 		// calculate error terms
-		float errorARoll = 0.0 - aRoll; // my setpoint is 0
+		float errorARoll = 0.0 - calculatedRollAngle; // my setpoint is 0
 		float errorAPitch = 0.0 - aPitch; // my setpoint is 0
 		float errorAYaw = 0.0 - aYaw; // my setpoint is 0
 
@@ -605,7 +605,7 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		float pitchCmd = kp * errorAPitch;
 		float yawCmd = 0; // kp * errorAYaw;
 
-		float thrustCmd = 15;
+		float thrustCmd = 10;
 
 		// add motor deadtime
 		if(NOW_MS < 15000)
@@ -615,10 +615,10 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
 
-		uint8_t uartData[150] = {0};
-		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f>\r\n",
-				count, deltaT, gyroRoll, calculatedRollAngle);
-		HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);
+//		uint8_t uartData[150] = {0};
+//		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f>\r\n",
+//				count, deltaT, gyroRoll, calculatedRollAngle);
+//		HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);
 
 //		uint8_t uartData[150] = {0};
 //		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n", count,
