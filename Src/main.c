@@ -514,8 +514,12 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 	setPWM(FL, FR, BR, BL);
 }
 	//TODO: CLEAN UP ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  uint32_t PREVIOUS_MS = 0;
   while (1)
   {
+	  	deltaT = (NOW_MS - PREVIOUS_MS)/1000.0;
+	  	PREVIOUS_MS = NOW_MS;
+
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
 
 		// read acceleration, filter with a running average
@@ -604,9 +608,9 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
 
 		uint8_t uartData[150] = {0};
-		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f>\r\n",
-				count, avgAccelY, avgAccelZ, accelRoll, accelRollLpf);
-		HAL_UART_Transmit(&huart4, uartData, 40, 0x00FF);
+		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n",
+				count, deltaT, avgAccelY, avgAccelZ, accelRoll, accelRollLpf);
+		HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);
 
 //		uint8_t uartData[150] = {0};
 //		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n", count,
