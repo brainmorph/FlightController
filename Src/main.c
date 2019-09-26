@@ -516,6 +516,7 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 	//TODO: CLEAN UP ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   uint32_t PREVIOUS_MS = 0;
   float oldRollAngle = 0;
+  float thrustCmd = 0;
   while (1)
   {
 	  	deltaT = (NOW_MS - PREVIOUS_MS)/1000.0;
@@ -605,25 +606,32 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		float pitchCmd = kp * errorAPitch;
 		float yawCmd = 0; // kp * errorAYaw;
 
-		float thrustCmd = 10;
-
-		// add motor deadtime
-		if(NOW_MS < 15000)
-		{
-			thrustCmd = rollCmd = pitchCmd = 0;
-		}
-
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
 
 //		uint8_t uartData[150] = {0};
-//		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f>\r\n",
+//		snprintf(uartData, sizeof(uartData), "\r\n<%ld, %+.2f, %+.2f, %+.2f>\r\n",
 //				count, deltaT, gyroRoll, calculatedRollAngle);
 //		HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);
 
-//		uint8_t uartData[150] = {0};
-//		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n", count,
-//				aRoll, aPitch, aYaw, rollCmd, pitchCmd, yawCmd);
-//		HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);
+		uint8_t uartReceive[2] = {0};
+		HAL_UART_Receive(&huart4, uartReceive, 1, 1);
+		if(uartReceive[0] == 'w')
+		{
+			//HAL_UART_Transmit(&huart4, uartReceive, 2, 0x00FF);
+			thrustCmd++;
+		}
+		if(uartReceive[0] == 's')
+		{
+			thrustCmd--;
+		}
+
+		if(thrustCmd < 0)
+			thrustCmd = 0;
+
+		uint8_t uartData[150] = {0};
+		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n",
+				count, deltaT, thrustCmd, rollCmd, pitchCmd, yawCmd);
+		HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);
 
 
 	  count++;
