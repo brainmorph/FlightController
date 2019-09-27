@@ -516,13 +516,14 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 	//TODO: CLEAN UP ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   uint32_t PREVIOUS_MS = 0;
   float oldRollAngle = 0;
+  float oldPitchAngle = 0;
   float thrustCmd = 0;
   while (1)
   {
 	  	deltaT = (NOW_MS - PREVIOUS_MS)/1000.0;
 	  	PREVIOUS_MS = NOW_MS;
 
-		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
+		//HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
 
 		// read acceleration, filter with a running average
 		readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
@@ -532,31 +533,31 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		// at this point I should have the running average of floatX,Y,Z according to accelRunningAverage(...)
 
 		// for fun let's deadband accelZ.
-		float deadBandZ = (avgAccelZ - envAccelZ);
-		if(deadBandZ < 0.2 && deadBandZ > -0.2)
-		  deadBandZ = 0;
-
-		// derive velocity from acceleration
-		vX = (avgAccelX - envAccelX) * deltaT + vX; // subtract out calibration
-		vY = (avgAccelY - envAccelY) * deltaT + vY; // subtract out calibration
-		vZ = deadBandZ * deltaT + vZ; // subtract out calibration
-
-		volatile int dummy = 0;
-		dummy++;
-
-		// calculate error
-		float errorVZ = 0.0 - vZ; // my setpoint is 0 m/s for now.  + vZ because positive Z axis points down
-
-		// PID (P only for now)
-		float thrustRPM = 20000.0 * errorVZ;
-
-		// convert to PWM
-		int PWM = (int)pwm(thrustRPM);
-
-		if(PWM < 0)
-		  PWM = 0;
-		if(PWM > 255)
-		  PWM = 255;
+//		float deadBandZ = (avgAccelZ - envAccelZ);
+//		if(deadBandZ < 0.2 && deadBandZ > -0.2)
+//		  deadBandZ = 0;
+//
+//		// derive velocity from acceleration
+//		vX = (avgAccelX - envAccelX) * deltaT + vX; // subtract out calibration
+//		vY = (avgAccelY - envAccelY) * deltaT + vY; // subtract out calibration
+//		vZ = deadBandZ * deltaT + vZ; // subtract out calibration
+//
+//		volatile int dummy = 0;
+//		dummy++;
+//
+//		// calculate error
+//		float errorVZ = 0.0 - vZ; // my setpoint is 0 m/s for now.  + vZ because positive Z axis points down
+//
+//		// PID (P only for now)
+//		float thrustRPM = 20000.0 * errorVZ;
+//
+//		// convert to PWM
+//		int PWM = (int)pwm(thrustRPM);
+//
+//		if(PWM < 0)
+//		  PWM = 0;
+//		if(PWM > 255)
+//		  PWM = 255;
 
 
 		// let's calculate gyro PID separately for now
@@ -569,14 +570,24 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		// calculate roll angle from acceleration
 		float accelRoll = -1.0 * atan2f(avgAccelY, avgAccelZ); // sign flip to align with accelerometer orientation
 		accelRoll *= (180.0 / 3.1415); // convert to degrees
-		//lpf(&accelRollLpf, accelRoll);
+
+		// calculate pitch angle from acceleration
+		float accelPitch = atan2f(avgAccelX, avgAccelZ);
+		accelPitch *= (180.0 / 3.1415); // convert to degrees
 
 		// complementary roll angle calculation
 		float partialAccelRoll = 0.03 * accelRoll; // take only 2% of acceleration calculated angle
-		float gyroRoll = gyroY * deltaT + oldRollAngle;
+		float gyroRoll = -1.0 * gyroX * deltaT + oldRollAngle;
 		float partialGyroRoll = 0.97 * gyroRoll;
 		float calculatedRollAngle = partialAccelRoll + partialGyroRoll;
 		oldRollAngle = calculatedRollAngle;
+
+		// complementary pitch angle calculation
+		float partialAccelPitch = 0.03 * accelPitch;
+		float gyroPitch = -1.0 * gyroY * deltaT + oldPitchAngle;
+		float partialGyroPitch = 0.97 * gyroPitch;
+		float calculatedPitchAngle = partialAccelPitch + partialGyroPitch;
+		oldPitchAngle = calculatedPitchAngle;
 
 		float deadBandGX = gyroX - envGyroX;
 		float deadBandGY = gyroY - envGyroY;
@@ -597,14 +608,14 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 
 		// calculate error terms
 		float errorARoll = 0.0 - calculatedRollAngle; // my setpoint is 0
-		float errorAPitch = 0.0 - aPitch; // my setpoint is 0
+		float errorAPitch = 0.0 - calculatedPitchAngle; // my setpoint is 0
 		float errorAYaw = 0.0 - aYaw; // my setpoint is 0
 
 		// calculate angular command (proportional) terms
 		float kp = 0.5;
 		float rollCmd = kp * errorARoll;
 		float pitchCmd = kp * errorAPitch;
-		float yawCmd = 0; // kp * errorAYaw;
+		float yawCmd = 0; // TODO: calculate appropriate yaw command
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
 
@@ -630,8 +641,8 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 
 		uint8_t uartData[150] = {0};
 		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n",
-				count, deltaT, thrustCmd, rollCmd, pitchCmd, yawCmd);
-		HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);
+				count, deltaT, calculatedRollAngle, calculatedPitchAngle, rollCmd, pitchCmd);
+		HAL_UART_Transmit(&huart4, uartData, 150, 0x00FF);
 
 
 	  count++;
