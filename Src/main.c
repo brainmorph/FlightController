@@ -453,17 +453,17 @@ void setPWM(int motor1, int motor2, int motor3, int motor4)
 	counter++;
 	if(counter < 0)
 		counter = 0;
-	if(counter % 10 != 0) // slow down PWM updates
-		return;
+//	if(counter % 10 != 0) // slow down PWM updates
+//		return;
 
 	// clip min/max motor output
-	if(motor1 < 0)
+	if(motor1 < 2)
 		motor1 = 0;
-	if(motor2 < 0)
+	if(motor2 < 2)
 		motor2 = 0;
-	if(motor3 < 0)
+	if(motor3 < 2)
 		motor3 = 0;
-	if(motor4 < 0)
+	if(motor4 < 2)
 		motor4 = 0;
 
 	if(motor1 > 25)
@@ -502,6 +502,11 @@ void setPWM(int motor1, int motor2, int motor3, int motor4)
 	setting = (motor4/100.0) * (float)range;
 	setting += min;
 	htim4.Instance->CCR4 = setting;
+
+	uint8_t uartData[150] = {0};
+	snprintf(uartData, sizeof(uartData), "[%d, %d, %d, %d]   ",
+			motor1, motor2, motor3, motor4);
+	HAL_UART_Transmit(&huart4, uartData, 150, 0x00FF);
 }
 
 void mixPWM(float thrust, float roll, float pitch, float yaw)
@@ -616,6 +621,11 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		float rollCmd = kp * errorARoll;
 		float pitchCmd = kp * errorAPitch;
 		float yawCmd = 0; // TODO: calculate appropriate yaw command
+
+		if(NOW_MS < 12000)
+		{
+			thrustCmd = rollCmd = pitchCmd = yawCmd = 0;
+		}
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
 
