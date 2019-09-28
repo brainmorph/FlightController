@@ -532,7 +532,7 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 
 		// read acceleration, filter with a running average
 		readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
-		accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
+		//accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
 
 
 		// at this point I should have the running average of floatX,Y,Z according to accelRunningAverage(...)
@@ -567,7 +567,7 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 
 		// let's calculate gyro PID separately for now
 		readCurrentGyroValues(&gyroX, &gyroY, &gyroZ);
-		gyroRunningAverage(&gyroX, &gyroY, &gyroZ); // takes input and factors it into the running average for each variable
+		//gyroRunningAverage(&gyroX, &gyroY, &gyroZ); // takes input and factors it into the running average for each variable
 
 		// try to Low Pass Filter
 		//lpf(&gyroLpf, gyroY); // lpf roll
