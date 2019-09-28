@@ -531,9 +531,16 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		//HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
 
 		// read acceleration, filter with a running average
+	  	float oldAX = avgAccelX;
+	  	float oldAY = avgAccelY;
+	  	float oldAZ = avgAccelZ;
+
 		readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
 		//accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
 
+		lpf(&oldAX, avgAccelX);
+		lpf(&oldAY, avgAccelY);
+		lpf(&oldAZ, avgAccelZ);
 
 		// at this point I should have the running average of floatX,Y,Z according to accelRunningAverage(...)
 
@@ -566,30 +573,37 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 
 
 		// let's calculate gyro PID separately for now
+		float oldGX = gyroX;
+		float oldGY = gyroY;
+		float oldGZ = gyroZ;
 		readCurrentGyroValues(&gyroX, &gyroY, &gyroZ);
 		//gyroRunningAverage(&gyroX, &gyroY, &gyroZ); // takes input and factors it into the running average for each variable
+
+		lpf(&oldGX, gyroX);
+		lpf(&oldGY, gyroY);
+		lpf(&oldGZ, gyroZ);
 
 		// try to Low Pass Filter
 		//lpf(&gyroLpf, gyroY); // lpf roll
 
 		// calculate roll angle from acceleration
-		float accelRoll = -1.0 * atan2f(avgAccelY, avgAccelZ); // sign flip to align with accelerometer orientation
+		float accelRoll = -1.0 * atan2f(oldAY, oldAZ); // sign flip to align with accelerometer orientation
 		accelRoll *= (180.0 / 3.1415); // convert to degrees
 
 		// calculate pitch angle from acceleration
-		float accelPitch = atan2f(avgAccelX, avgAccelZ);
+		float accelPitch = atan2f(oldAX, oldAZ);
 		accelPitch *= (180.0 / 3.1415); // convert to degrees
 
 		// complementary roll angle calculation
 		float partialAccelRoll = 0.03 * accelRoll; // take only 2% of acceleration calculated angle
-		float gyroRoll = -1.0 * gyroX * deltaT + oldRollAngle;
+		float gyroRoll = -1.0 * oldGX * deltaT + oldRollAngle;
 		float partialGyroRoll = 0.97 * gyroRoll;
 		float calculatedRollAngle = partialAccelRoll + partialGyroRoll;
 		oldRollAngle = calculatedRollAngle;
 
 		// complementary pitch angle calculation
 		float partialAccelPitch = 0.03 * accelPitch;
-		float gyroPitch = -1.0 * gyroY * deltaT + oldPitchAngle;
+		float gyroPitch = -1.0 * oldGY * deltaT + oldPitchAngle;
 		float partialGyroPitch = 0.97 * gyroPitch;
 		float calculatedPitchAngle = partialAccelPitch + partialGyroPitch;
 		oldPitchAngle = calculatedPitchAngle;
@@ -625,6 +639,10 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		if(NOW_MS < 12000)
 		{
 			thrustCmd = rollCmd = pitchCmd = yawCmd = 0;
+		}
+		else
+		{
+			thrustCmd = 20;
 		}
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
