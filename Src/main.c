@@ -536,7 +536,7 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 	  	float oldAZ = avgAccelZ;
 
 		readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
-		//accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
+		accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
 
 		lpf(&oldAX, avgAccelX);
 		lpf(&oldAY, avgAccelY);
@@ -577,7 +577,7 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		float oldGY = gyroY;
 		float oldGZ = gyroZ;
 		readCurrentGyroValues(&gyroX, &gyroY, &gyroZ);
-		//gyroRunningAverage(&gyroX, &gyroY, &gyroZ); // takes input and factors it into the running average for each variable
+		gyroRunningAverage(&gyroX, &gyroY, &gyroZ); // takes input and factors it into the running average for each variable
 
 		lpf(&oldGX, gyroX);
 		lpf(&oldGY, gyroY);
@@ -631,7 +631,7 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 		float errorAYaw = 0.0 - aYaw; // my setpoint is 0
 
 		// calculate angular command (proportional) terms
-		float kp = 0.5;
+		float kp = 0.01;
 		float rollCmd = kp * errorARoll;
 		float pitchCmd = kp * errorAPitch;
 		float yawCmd = 0; // TODO: calculate appropriate yaw command
@@ -668,8 +668,8 @@ void mixPWM(float thrust, float roll, float pitch, float yaw)
 			thrustCmd = 0;
 
 		uint8_t uartData[150] = {0};
-		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n",
-				count, deltaT, calculatedRollAngle, calculatedPitchAngle, rollCmd, pitchCmd);
+		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n",
+				count, deltaT, oldAX, oldAY, oldAZ, oldGX, oldGY, oldGZ);
 		HAL_UART_Transmit(&huart4, uartData, 150, 0x00FF);
 
 
