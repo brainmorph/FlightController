@@ -457,13 +457,13 @@ void setPWM(int motor1, int motor2, int motor3, int motor4)
 //		return;
 
 	// clip min/max motor output
-	if(motor1 < 2)
+	if(motor1 < 4)
 		motor1 = 0;
-	if(motor2 < 2)
+	if(motor2 < 4)
 		motor2 = 0;
-	if(motor3 < 2)
+	if(motor3 < 4)
 		motor3 = 0;
-	if(motor4 < 2)
+	if(motor4 < 4)
 		motor4 = 0;
 
 	if(motor1 > 25)
