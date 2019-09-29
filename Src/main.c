@@ -450,64 +450,64 @@ int main(void)
 	// each setting represents motor throttle from 0 to 100%
 	void setPWM(int motor1, int motor2, int motor3, int motor4)
 	{
-	counter++;
-	if(counter < 0)
-		counter = 0;
-	//	if(counter % 10 != 0) // slow down PWM updates
-	//		return;
+//		counter++;
+//		if(counter < 0)
+//			counter = 0;
+//		if(counter % 10 != 0) // slow down PWM updates
+//			return;
 
-	// clip min/max motor output
-	if(motor1 < 4)
-		motor1 = 0;
-	if(motor2 < 4)
-		motor2 = 0;
-	if(motor3 < 4)
-		motor3 = 0;
-	if(motor4 < 4)
-		motor4 = 0;
+		// clip min/max motor output
+		if(motor1 < 4)
+			motor1 = 0;
+		if(motor2 < 4)
+			motor2 = 0;
+		if(motor3 < 4)
+			motor3 = 0;
+		if(motor4 < 4)
+			motor4 = 0;
 
-	int motorMax = 25;
-	if(motor1 > motorMax)
-		motor1 = motorMax;
-	if(motor2 > motorMax)
-		motor2 = motorMax;
-	if(motor3 > motorMax)
-		motor3 = motorMax;
-	if(motor4 > motorMax)
-		motor4 = motorMax;
+		int motorMax = 25;
+		if(motor1 > motorMax)
+			motor1 = motorMax;
+		if(motor2 > motorMax)
+			motor2 = motorMax;
+		if(motor3 > motorMax)
+			motor3 = motorMax;
+		if(motor4 > motorMax)
+			motor4 = motorMax;
 
 
-	// TODO: update min and max values to match new timer settings (I want higher resolution control)
-	// TODO: new timer will be 80MHz with pre-scalar of 20 and counter period 80,000
-	int max = 40; // based on 80MHz TIM4 with pre-scalar of 4000 and counter period 400
-	int min = 20; // based on 80MHz TIM4 with pre-scalar of 4000 and counter period 400
+		// TODO: update min and max values to match new timer settings (I want higher resolution control)
+		// TODO: new timer will be 80MHz with pre-scalar of 20 and counter period 80,000
+		int max = 40; // based on 80MHz TIM4 with pre-scalar of 4000 and counter period 400
+		int min = 20; // based on 80MHz TIM4 with pre-scalar of 4000 and counter period 400
 
-	int range = max - min;
+		int range = max - min;
 
-	// motor 1
-	int setting = (motor1/100.0) * (float)range;
-	setting += min; // add new value to minimum setting
-	htim4.Instance->CCR1 = setting;
+		// motor 1
+		int setting = (motor1/100.0) * (float)range;
+		setting += min; // add new value to minimum setting
+		htim4.Instance->CCR1 = setting;
 
-	// motor 2
-	setting = (motor2/100.0) * (float)range;
-	setting += min;
-	htim4.Instance->CCR2 = setting;
+		// motor 2
+		setting = (motor2/100.0) * (float)range;
+		setting += min;
+		htim4.Instance->CCR2 = setting;
 
-	// motor 3
-	setting = (motor3/100.0) * (float)range;
-	setting += min;
-	htim4.Instance->CCR3 = setting;
+		// motor 3
+		setting = (motor3/100.0) * (float)range;
+		setting += min;
+		htim4.Instance->CCR3 = setting;
 
-	// motor 4
-	setting = (motor4/100.0) * (float)range;
-	setting += min;
-	htim4.Instance->CCR4 = setting;
+		// motor 4
+		setting = (motor4/100.0) * (float)range;
+		setting += min;
+		htim4.Instance->CCR4 = setting;
 
-	uint8_t uartData[150] = {0};
-	snprintf(uartData, sizeof(uartData), "[%d, %d, %d, %d]   ",
-			motor1, motor2, motor3, motor4);
-	HAL_UART_Transmit(&huart4, uartData, 150, 0x00FF);
+		uint8_t uartData[70] = {0};
+		snprintf(uartData, sizeof(uartData), "[%d, %d, %d, %d]   ",
+				motor1, motor2, motor3, motor4);
+		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 	}
 
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
@@ -524,6 +524,7 @@ int main(void)
 	float oldRollAngle = 0;
 	float oldPitchAngle = 0;
 	float thrustCmd = 0;
+	uint8_t uartData[90] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
 	while (1)
 	{
 	  	deltaT = (NOW_MS - PREVIOUS_MS)/1000.0;
@@ -537,10 +538,9 @@ int main(void)
 	  	readCurrentGyroValues(&gX, &gY, &gZ);
 
 	  	// report raw values
-		uint8_t uartData[150] = {0};
 		snprintf(uartData, sizeof(uartData), "<%ld, %+.3f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n",
 				count, deltaT, aX, aY, aZ, gX, gY, gZ);
-		HAL_UART_Transmit(&huart4, uartData, 150, 200);
+		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
 		if(NOW_MS < 12000)
 		{
