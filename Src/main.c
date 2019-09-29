@@ -563,6 +563,8 @@ int main(void)
 	float lpfGyroPitchAngle = 0;
 	float oldRollAngle = 0;
 	float oldPitchAngle = 0;
+	float oldErrorRoll = 0;
+	float oldErrorPitch = 0;
 	float thrustCmd = 0;
 	uint8_t uartData[90] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
 	while (1)
@@ -630,14 +632,27 @@ int main(void)
 
 
 		// calculate error terms
-		float errorARoll = 0.0 - calculatedRollAngle; // my setpoint is 0
-		float errorAPitch = 0.0 - calculatedPitchAngle; // my setpoint is 0
+		float errorRoll = 0.0 - calculatedRollAngle; // my setpoint is 0
+		float errorPitch = 0.0 - calculatedPitchAngle; // my setpoint is 0
 
-		// calculate angular command (proportional) terms
-		float kp = 0.05;
-		float rollCmd = kp * errorARoll;
-		float pitchCmd = kp * errorAPitch;
+		// calculate angular command proportional terms
+		float kp = 0.0;
+		float rollCmd = kp * errorRoll;
+		float pitchCmd = kp * errorPitch;
 		float yawCmd = 0; // TODO: calculate appropriate yaw comman
+
+		// calculate angular command integral terms
+		float ki = 0.0;
+		rollCmd += (ki * errorRoll) + oldErrorRoll;
+		pitchCmd += (ki * errorPitch) + oldErrorPitch;
+
+		// calculate angular command derivative terms
+		float kd = 2.0;
+		rollCmd += kd * (errorRoll - oldErrorRoll);
+		pitchCmd += kd * (errorPitch - oldErrorPitch);
+
+		oldErrorRoll = errorRoll;
+		oldErrorPitch = errorPitch;
 
 		if(NOW_MS < 12000)
 		{
