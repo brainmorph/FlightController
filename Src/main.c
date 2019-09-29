@@ -548,9 +548,9 @@ int main(void)
 	  	lpf(&gyroXLPF, gX, 0.01);
 	  	lpf(&gyroYLPF, gY, 0.01);
 	  	lpf(&gyroZLPF, gZ, 0.01);
-	  	lpf(&accelXLPF, aX, 0.1);
-	  	lpf(&accelYLPF, aY, 0.1);
-	  	lpf(&accelZLPF, aZ, 0.1);
+	  	lpf(&accelXLPF, aX, 0.01);
+	  	lpf(&accelYLPF, aY, 0.01);
+	  	lpf(&accelZLPF, aZ, 0.01);
 
 	  	gyroRollAngle = deltaT * gX + oldRollAngle;
 	  	lpfGyroRollAngle = deltaT * gyroXLPF + oldRollAngle;
@@ -559,9 +559,12 @@ int main(void)
 		float accelRollAngle = -1.0 * atan2f(aY, aZ); // sign flip to align with accelerometer orientation
 		accelRollAngle *= (180.0 / 3.1415); // convert to degrees
 
+		float lpfAccelRollAngle = -1.0 * atan2f(accelYLPF, accelZLPF); // sign flip to align with accelerometer orientation
+		lpfAccelRollAngle *= (180.0 / 3.1415); // convert to degrees
+
 		// complementary roll angle calculation
-		float partialAccelRoll = 0.03 * accelRollAngle;
-		float partialGyroRoll = 0.97 * gyroRollAngle;
+		float partialAccelRoll = 0.2 * lpfAccelRollAngle;
+		float partialGyroRoll = 0.8 * lpfGyroRollAngle;
 		float calculatedRollAngle = partialAccelRoll + partialGyroRoll;
 		oldRollAngle = calculatedRollAngle;
 
@@ -572,7 +575,7 @@ int main(void)
 //		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
 	  	snprintf(uartData, sizeof(uartData), "%+.2f, %+.2f, %+.2f, %+.3f\r\n",
-				accelRollAngle, gyroRollAngle, calculatedRollAngle, deltaT);
+	  			lpfAccelRollAngle, lpfGyroRollAngle, calculatedRollAngle, deltaT);
 		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
 
