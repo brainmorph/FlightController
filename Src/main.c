@@ -466,22 +466,18 @@ int main(void)
 	}
 
 	// each setting represents motor throttle from 0 to 100%
+	int motor1Setting=0, motor2Setting=0, motor3Setting=0, motor4Setting=0;
 	void setPWM(int motor1, int motor2, int motor3, int motor4)
 	{
-//		counter++;
-//		if(counter < 0)
-//			counter = 0;
-//		if(counter % 10 != 0) // slow down PWM updates
-//			return;
 
 		// clip min/max motor output
-		if(motor1 < 4)
+		if(motor1 < 0)
 			motor1 = 0;
-		if(motor2 < 4)
+		if(motor2 < 0)
 			motor2 = 0;
-		if(motor3 < 4)
+		if(motor3 < 0)
 			motor3 = 0;
-		if(motor4 < 4)
+		if(motor4 < 0)
 			motor4 = 0;
 
 		int motorMax = 25;
@@ -494,6 +490,25 @@ int main(void)
 		if(motor4 > motorMax)
 			motor4 = motorMax;
 
+		// transition speed one step at a time
+		if(motor1 > motor1Setting)
+			motor1Setting++;
+		if(motor2 > motor2Setting)
+			motor2Setting++;
+		if(motor3 > motor3Setting)
+			motor3Setting++;
+		if(motor4 > motor4Setting)
+			motor4Setting++;
+
+		if(motor1 < motor1Setting)
+			motor1Setting--;
+		if(motor2 < motor2Setting)
+			motor2Setting--;
+		if(motor3 < motor3Setting)
+			motor3Setting--;
+		if(motor4 < motor4Setting)
+			motor4Setting--;
+
 
 		// TODO: update min and max values to match new timer settings (I want higher resolution control)
 		// TODO: new timer will be 80MHz with pre-scalar of 20 and counter period 80,000
@@ -503,22 +518,22 @@ int main(void)
 		int range = max - min;
 
 		// motor 1
-		int setting = (motor1/100.0) * (float)range;
+		int setting = (motor1Setting/100.0) * (float)range;
 		setting += min; // add new value to minimum setting
 		htim4.Instance->CCR1 = setting;
 
 		// motor 2
-		setting = (motor2/100.0) * (float)range;
+		setting = (motor2Setting/100.0) * (float)range;
 		setting += min;
 		htim4.Instance->CCR2 = setting;
 
 		// motor 3
-		setting = (motor3/100.0) * (float)range;
+		setting = (motor3Setting/100.0) * (float)range;
 		setting += min;
 		htim4.Instance->CCR3 = setting;
 
 		// motor 4
-		setting = (motor4/100.0) * (float)range;
+		setting = (motor4Setting/100.0) * (float)range;
 		setting += min;
 		htim4.Instance->CCR4 = setting;
 
@@ -609,61 +624,33 @@ int main(void)
 //				count, deltaT, aX, aY, aZ, gX, gY, gZ);
 //		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
-	  	snprintf(uartData, sizeof(uartData), "%+.2f, %+.2f, %+.3f\r\n",
+	  	snprintf(uartData, sizeof(uartData), "%+02.2f, %+02.2f, %+.3f\r\n",
 	  			calculatedRollAngle, calculatedPitchAngle, deltaT);
 		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
 
+		// calculate error terms
+		float errorARoll = 0.0 - calculatedRollAngle; // my setpoint is 0
+		float errorAPitch = 0.0 - calculatedPitchAngle; // my setpoint is 0
+
+		// calculate angular command (proportional) terms
+		float kp = 0.01;
+		float rollCmd = kp * errorARoll;
+		float pitchCmd = kp * errorAPitch;
+		float yawCmd = 0; // TODO: calculate appropriate yaw comman
+
 		if(NOW_MS < 12000)
 		{
-			mixPWM(0,0,0,0);
+			thrustCmd = rollCmd = pitchCmd = yawCmd = 0;
 		}
 		else
 		{
-			mixPWM(20,0,0,0);
+			thrustCmd = 10;
 		}
 
-//		// read acceleration, filter with a running average
-//	  	float oldAX = avgAccelX;
-//	  	float oldAY = avgAccelY;
-//	  	float oldAZ = avgAccelZ;
-//
-//		readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
-//		accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
-//
-//		lpf(&oldAX, avgAccelX);
-//		lpf(&oldAY, avgAccelY);
-//		lpf(&oldAZ, avgAccelZ);
-//
-//		// at this point I should have the running average of floatX,Y,Z according to accelRunningAverage(...)
-//
-//		// for fun let's deadband accelZ.
-////		float deadBandZ = (avgAccelZ - envAccelZ);
-////		if(deadBandZ < 0.2 && deadBandZ > -0.2)
-////		  deadBandZ = 0;
-////
-////		// derive velocity from acceleration
-////		vX = (avgAccelX - envAccelX) * deltaT + vX; // subtract out calibration
-////		vY = (avgAccelY - envAccelY) * deltaT + vY; // subtract out calibration
-////		vZ = deadBandZ * deltaT + vZ; // subtract out calibration
-////
-////		volatile int dummy = 0;
-////		dummy++;
-////
-////		// calculate error
-////		float errorVZ = 0.0 - vZ; // my setpoint is 0 m/s for now.  + vZ because positive Z axis points down
-////
-////		// PID (P only for now)
-////		float thrustRPM = 20000.0 * errorVZ;
-////
-////		// convert to PWM
-////		int PWM = (int)pwm(thrustRPM);
-////
-////		if(PWM < 0)
-////		  PWM = 0;
-////		if(PWM > 255)
-////		  PWM = 255;
-//
+		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
+
+
 //
 //		// let's calculate gyro PID separately for now
 //		float oldGX = gyroX;
