@@ -282,6 +282,18 @@ void readCurrentGyroValues(float* floatX, float* floatY, float* floatZ)
 	*floatZ = (float)gyroZ * (float)(1.0/131.0); //multiply reading with Full Scale value
 }
 
+void configMPUFilter()
+{
+	// Read register
+	volatile int16_t config = 0;
+	config = readMPUreg(0x1A);
+
+	config &= 0xF8;
+	config |= 0x6;
+
+	writeMPUreg(0x1A, config);
+}
+
 float accelLpf = 0;
 float accelRollLpf = 0;
 float gyroLpf = 0;
@@ -526,6 +538,9 @@ int main(void)
 		setPWM(FL, FR, BR, BL);
 	}
 	//TODO: CLEAN UP ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	configMPUFilter();
+
 	uint32_t PREVIOUS_MS = 0;
 	float gyroRollAngle = 0;
 	float gyroPitchAngle = 0;
@@ -566,8 +581,8 @@ int main(void)
 		lpfAccelRollAngle *= (180.0 / 3.1415); // convert to degrees
 
 		// complementary roll angle calculation
-		float partialAccelRoll = 0.2 * lpfAccelRollAngle;
-		float partialGyroRoll = 0.8 * lpfGyroRollAngle;
+		float partialAccelRoll = 0.2 * accelRollAngle;
+		float partialGyroRoll = 0.8 * gyroRollAngle;
 		float calculatedRollAngle = partialAccelRoll + partialGyroRoll;
 		oldRollAngle = calculatedRollAngle;
 
@@ -583,8 +598,8 @@ int main(void)
 		lpfAccelPitchAngle *= (180.0 / 3.1415); // convert to degrees
 
 		// complementary pitch angle calculation
-		float partialAccelPitch = 0.2 * lpfAccelPitchAngle;
-		float partialGyroPitch = 0.8 * lpfGyroPitchAngle;
+		float partialAccelPitch = 0.2 * accelPitchAngle;
+		float partialGyroPitch = 0.8 * gyroPitchAngle;
 		float calculatedPitchAngle = partialAccelPitch + partialGyroPitch;
 		oldPitchAngle = calculatedPitchAngle;
 
