@@ -528,7 +528,9 @@ int main(void)
 	//TODO: CLEAN UP ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 	uint32_t PREVIOUS_MS = 0;
 	float gyroRollAngle = 0;
+	float gyroPitchAngle = 0;
 	float lpfGyroRollAngle = 0;
+	float lpfGyroPitchAngle = 0;
 	float oldRollAngle = 0;
 	float oldPitchAngle = 0;
 	float thrustCmd = 0;
@@ -552,6 +554,7 @@ int main(void)
 	  	lpf(&accelYLPF, aY, 0.01);
 	  	lpf(&accelZLPF, aZ, 0.01);
 
+	  	// calculate roll angle from gyro
 	  	gyroRollAngle = deltaT * gX + oldRollAngle;
 	  	lpfGyroRollAngle = deltaT * gyroXLPF + oldRollAngle;
 
@@ -568,14 +571,31 @@ int main(void)
 		float calculatedRollAngle = partialAccelRoll + partialGyroRoll;
 		oldRollAngle = calculatedRollAngle;
 
+	  	// calculate pitch angle from gyro
+	  	gyroPitchAngle = deltaT * gY + oldPitchAngle;
+	  	lpfGyroPitchAngle = deltaT * gyroYLPF + oldPitchAngle;
+
+		//calculate pitch angle from acceleration
+		float accelPitchAngle = atan2f(aX, aZ);
+		accelPitchAngle *= (180.0 / 3.1415); // convert to degrees
+
+		float lpfAccelPitchAngle = atan2f(accelXLPF, accelZLPF);
+		lpfAccelPitchAngle *= (180.0 / 3.1415); // convert to degrees
+
+		// complementary pitch angle calculation
+		float partialAccelPitch = 0.2 * lpfAccelPitchAngle;
+		float partialGyroPitch = 0.8 * lpfGyroPitchAngle;
+		float calculatedPitchAngle = partialAccelPitch + partialGyroPitch;
+		oldPitchAngle = calculatedPitchAngle;
+
 
 	  	// report raw values
 //		snprintf(uartData, sizeof(uartData), "<%ld, %+.3f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n",
 //				count, deltaT, aX, aY, aZ, gX, gY, gZ);
 //		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
-	  	snprintf(uartData, sizeof(uartData), "%+.2f, %+.2f, %+.2f, %+.3f\r\n",
-	  			lpfAccelRollAngle, lpfGyroRollAngle, calculatedRollAngle, deltaT);
+	  	snprintf(uartData, sizeof(uartData), "%+.2f, %+.2f, %+.3f\r\n",
+	  			calculatedRollAngle, calculatedPitchAngle, deltaT);
 		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
 
