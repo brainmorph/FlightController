@@ -570,7 +570,7 @@ int main(void)
 	  	deltaT = (NOW_MS - PREVIOUS_MS)/1000.0;
 	  	PREVIOUS_MS = NOW_MS;
 
-//		//HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3); // scope this pin if you want to see main loop frequency
+		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3); // scope this pin if you want to see main loop frequency
 
 	  	// read raw accelerometer and gyro
 	  	float aX = 0, aY = 0, aZ = 0, gX = 0, gY = 0, gZ = 0;
@@ -624,9 +624,9 @@ int main(void)
 //				count, deltaT, aX, aY, aZ, gX, gY, gZ);
 //		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
-	  	snprintf(uartData, sizeof(uartData), "%+02.2f, %+02.2f, %+.3f\r\n",
-	  			calculatedRollAngle, calculatedPitchAngle, deltaT);
-		HAL_UART_Transmit(&huart4, uartData, 150, 5);
+//	  	snprintf(uartData, sizeof(uartData), " %+02.2f, %+02.2f, %+.3f\r\n",
+//	  			calculatedRollAngle, calculatedPitchAngle, deltaT);
+//		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
 
 		// calculate error terms
@@ -634,7 +634,7 @@ int main(void)
 		float errorAPitch = 0.0 - calculatedPitchAngle; // my setpoint is 0
 
 		// calculate angular command (proportional) terms
-		float kp = 0.01;
+		float kp = 1;
 		float rollCmd = kp * errorARoll;
 		float pitchCmd = kp * errorAPitch;
 		float yawCmd = 0; // TODO: calculate appropriate yaw comman
