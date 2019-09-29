@@ -285,8 +285,14 @@ void readCurrentGyroValues(float* floatX, float* floatY, float* floatZ)
 float accelLpf = 0;
 float accelRollLpf = 0;
 float gyroLpf = 0;
-float lpfSetting = 0.01; // how much of the new value to use
-void lpf(float* valueSoFar, float newSample)
+
+float accelXLPF = 0;
+float accelYLPF = 0;
+float accelZLPF = 0;
+float gyroXLPF = 0;
+float gyroYLPF = 0;
+float gyroZLPF = 0;
+void lpf(float* valueSoFar, float newSample, float lpfSetting)
 {
 	float calc = *valueSoFar;
 	calc = (1.0 - lpfSetting) * calc; // take a fraction of the value so far
@@ -504,10 +510,10 @@ int main(void)
 		setting += min;
 		htim4.Instance->CCR4 = setting;
 
-		uint8_t uartData[70] = {0};
-		snprintf(uartData, sizeof(uartData), "[%d, %d, %d, %d]   ",
-				motor1, motor2, motor3, motor4);
-		HAL_UART_Transmit(&huart4, uartData, 150, 5);
+//		uint8_t uartData[70] = {0};
+//		snprintf(uartData, sizeof(uartData), "[%d, %d, %d, %d]   ",
+//				motor1, motor2, motor3, motor4);
+//		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 	}
 
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
@@ -521,6 +527,8 @@ int main(void)
 	}
 	//TODO: CLEAN UP ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 	uint32_t PREVIOUS_MS = 0;
+	float gyroRollAngle = 0;
+	float lpfGyroRollAngle = 0;
 	float oldRollAngle = 0;
 	float oldPitchAngle = 0;
 	float thrustCmd = 0;
@@ -537,10 +545,36 @@ int main(void)
 	  	readCurrentAccelerationValues(&aX, &aY, &aZ);
 	  	readCurrentGyroValues(&gX, &gY, &gZ);
 
+	  	lpf(&gyroXLPF, gX, 0.01);
+	  	lpf(&gyroYLPF, gY, 0.01);
+	  	lpf(&gyroZLPF, gZ, 0.01);
+	  	lpf(&accelXLPF, aX, 0.1);
+	  	lpf(&accelYLPF, aY, 0.1);
+	  	lpf(&accelZLPF, aZ, 0.1);
+
+	  	gyroRollAngle = deltaT * gX + oldRollAngle;
+	  	lpfGyroRollAngle = deltaT * gyroXLPF + oldRollAngle;
+
+	  	// calculate roll angle from acceleration
+		float accelRollAngle = -1.0 * atan2f(aY, aZ); // sign flip to align with accelerometer orientation
+		accelRollAngle *= (180.0 / 3.1415); // convert to degrees
+
+		// complementary roll angle calculation
+		float partialAccelRoll = 0.03 * accelRollAngle;
+		float partialGyroRoll = 0.97 * gyroRollAngle;
+		float calculatedRollAngle = partialAccelRoll + partialGyroRoll;
+		oldRollAngle = calculatedRollAngle;
+
+
 	  	// report raw values
-		snprintf(uartData, sizeof(uartData), "<%ld, %+.3f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n",
-				count, deltaT, aX, aY, aZ, gX, gY, gZ);
+//		snprintf(uartData, sizeof(uartData), "<%ld, %+.3f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n",
+//				count, deltaT, aX, aY, aZ, gX, gY, gZ);
+//		HAL_UART_Transmit(&huart4, uartData, 150, 5);
+
+	  	snprintf(uartData, sizeof(uartData), "%+.2f, %+.2f, %+.2f, %+.3f\r\n",
+				accelRollAngle, gyroRollAngle, calculatedRollAngle, deltaT);
 		HAL_UART_Transmit(&huart4, uartData, 150, 5);
+
 
 		if(NOW_MS < 12000)
 		{
