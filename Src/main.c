@@ -643,7 +643,7 @@ int main(void)
 		float errorPitch = 0.0 - calculatedPitchAngle; // my setpoint is 0
 
 		// calculate angular command proportional terms
-		float kp = 0.00;
+		float kp = 0.2;
 		float rollCmd = kp * errorRoll;
 		float pitchCmd = kp * errorPitch;
 		float yawCmd = 0; // TODO: calculate appropriate yaw comman
@@ -654,7 +654,7 @@ int main(void)
 //		pitchCmd += (ki * errorPitch) + oldPitchCmd;
 
 		// calculate angular command derivative terms
-		float kd = 0.3; //0.00005;
+		float kd = 0.3;
 		rollCmd += kd * (errorRoll - oldErrorRoll);
 		pitchCmd += kd * (errorPitch - oldErrorPitch);
 
