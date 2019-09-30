@@ -563,8 +563,12 @@ int main(void)
 	float lpfGyroPitchAngle = 0;
 	float oldRollAngle = 0;
 	float oldPitchAngle = 0;
+	float oldRollCmd = 0;
+	float oldPitchCmd = 0;
 	float oldErrorRoll = 0;
 	float oldErrorPitch = 0;
+	float calculatedRollAngleLPF = 0;
+	float calculatedPitchAngleLPF = 0;
 	float thrustCmd = 0;
 	uint8_t uartData[90] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
 	while (1)
@@ -630,6 +634,9 @@ int main(void)
 //	  			calculatedRollAngle, calculatedPitchAngle, deltaT);
 //		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
+		// LPF calculated angles
+//		lpf(&calculatedRollAngleLPF, calculatedRollAngle, 0.2);
+//		lpf(&calculatedPitchAngleLPF, calculatedPitchAngle, 0.2);
 
 		// calculate error terms
 		float errorRoll = 0.0 - calculatedRollAngle; // my setpoint is 0
@@ -642,15 +649,17 @@ int main(void)
 		float yawCmd = 0; // TODO: calculate appropriate yaw comman
 
 		// calculate angular command integral terms
-		float ki = 0.0;
-		rollCmd += (ki * errorRoll) + oldErrorRoll;
-		pitchCmd += (ki * errorPitch) + oldErrorPitch;
+		float ki = 0.00;
+		rollCmd += (ki * errorRoll) + oldRollCmd;
+		pitchCmd += (ki * errorPitch) + oldPitchCmd;
 
 		// calculate angular command derivative terms
-		float kd = 2.0;
+		float kd = 0.0; //0.00005;
 		rollCmd += kd * (errorRoll - oldErrorRoll);
 		pitchCmd += kd * (errorPitch - oldErrorPitch);
 
+		oldRollCmd = rollCmd;
+		oldPitchCmd = pitchCmd;
 		oldErrorRoll = errorRoll;
 		oldErrorPitch = errorPitch;
 
