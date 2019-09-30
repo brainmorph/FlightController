@@ -537,10 +537,10 @@ int main(void)
 		setting += min;
 		htim4.Instance->CCR4 = setting;
 
-//		uint8_t uartData[70] = {0};
-//		snprintf(uartData, sizeof(uartData), "[%d, %d, %d, %d]   ",
-//				motor1, motor2, motor3, motor4);
-//		HAL_UART_Transmit(&huart4, uartData, 150, 5);
+		uint8_t uartData[70] = {0};
+		snprintf(uartData, sizeof(uartData), "[%d, %d, %d, %d]   ",
+				motor1, motor2, motor3, motor4);
+		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 	}
 
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
@@ -583,12 +583,12 @@ int main(void)
 	  	readCurrentAccelerationValues(&aX, &aY, &aZ);
 	  	readCurrentGyroValues(&gX, &gY, &gZ);
 
-	  	lpf(&gyroXLPF, gX, 0.01);
-	  	lpf(&gyroYLPF, gY, 0.01);
-	  	lpf(&gyroZLPF, gZ, 0.01);
-	  	lpf(&accelXLPF, aX, 0.01);
-	  	lpf(&accelYLPF, aY, 0.01);
-	  	lpf(&accelZLPF, aZ, 0.01);
+	  	lpf(&gyroXLPF, gX, 0.1);
+	  	lpf(&gyroYLPF, gY, 0.1);
+	  	lpf(&gyroZLPF, gZ, 0.1);
+	  	lpf(&accelXLPF, aX, 0.1);
+	  	lpf(&accelYLPF, aY, 0.1);
+	  	lpf(&accelZLPF, aZ, 0.1);
 
 	  	// calculate roll angle from gyro
 	  	gyroRollAngle = deltaT * gX + oldRollAngle;
@@ -630,9 +630,9 @@ int main(void)
 //				count, deltaT, aX, aY, aZ, gX, gY, gZ);
 //		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
-//	  	snprintf(uartData, sizeof(uartData), " %+02.2f, %+02.2f, %+.3f\r\n",
-//	  			calculatedRollAngle, calculatedPitchAngle, deltaT);
-//		HAL_UART_Transmit(&huart4, uartData, 150, 5);
+	  	snprintf(uartData, sizeof(uartData), " %+02.2f, %+02.2f, %+.3f\r\n",
+	  			calculatedRollAngle, calculatedPitchAngle, deltaT);
+		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
 		// LPF calculated angles
 //		lpf(&calculatedRollAngleLPF, calculatedRollAngle, 0.2);
@@ -643,18 +643,18 @@ int main(void)
 		float errorPitch = 0.0 - calculatedPitchAngle; // my setpoint is 0
 
 		// calculate angular command proportional terms
-		float kp = 0.0;
+		float kp = 0.05;
 		float rollCmd = kp * errorRoll;
 		float pitchCmd = kp * errorPitch;
 		float yawCmd = 0; // TODO: calculate appropriate yaw comman
 
-		// calculate angular command integral terms
-		float ki = 0.00;
-		rollCmd += (ki * errorRoll) + oldRollCmd;
-		pitchCmd += (ki * errorPitch) + oldPitchCmd;
+//		// calculate angular command integral terms
+//		float ki = 0.00;
+//		rollCmd += (ki * errorRoll) + oldRollCmd;
+//		pitchCmd += (ki * errorPitch) + oldPitchCmd;
 
 		// calculate angular command derivative terms
-		float kd = 0.0; //0.00005;
+		float kd = 0.3; //0.00005;
 		rollCmd += kd * (errorRoll - oldErrorRoll);
 		pitchCmd += kd * (errorPitch - oldErrorPitch);
 
