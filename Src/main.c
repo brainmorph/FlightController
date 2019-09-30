@@ -289,7 +289,7 @@ void configMPUFilter()
 	config = readMPUreg(0x1A);
 
 	config &= 0xF8;
-	config |= 0x6;
+	config |= 0x4; // this is the value that goes into register
 
 	writeMPUreg(0x1A, config);
 }
@@ -643,7 +643,7 @@ int main(void)
 		float errorPitch = 0.0 - calculatedPitchAngle; // my setpoint is 0
 
 		// calculate angular command proportional terms
-		float kp = 0.05;
+		float kp = 0.00;
 		float rollCmd = kp * errorRoll;
 		float pitchCmd = kp * errorPitch;
 		float yawCmd = 0; // TODO: calculate appropriate yaw comman
@@ -669,7 +669,7 @@ int main(void)
 		}
 		else
 		{
-			thrustCmd = 10;
+			thrustCmd = 15;
 		}
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
