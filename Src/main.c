@@ -586,23 +586,12 @@ int main(void)
 	  	readCurrentAccelerationValues(&aX, &aY, &aZ);
 	  	readCurrentGyroValues(&gX, &gY, &gZ);
 
-	  	lpf(&gyroXLPF, gX, 0.1);
-	  	lpf(&gyroYLPF, gY, 0.1);
-	  	lpf(&gyroZLPF, gZ, 0.1);
-	  	lpf(&accelXLPF, aX, 0.1);
-	  	lpf(&accelYLPF, aY, 0.1);
-	  	lpf(&accelZLPF, aZ, 0.1);
-
 	  	// calculate roll angle from gyro
 	  	gyroRollAngle = deltaT * gX + oldRollAngle;
-	  	lpfGyroRollAngle = deltaT * gyroXLPF + oldRollAngle;
 
 	  	// calculate roll angle from acceleration
 		float accelRollAngle = -1.0 * atan2f(aY, aZ); // sign flip to align with accelerometer orientation
 		accelRollAngle *= (180.0 / 3.1415); // convert to degrees
-
-		float lpfAccelRollAngle = -1.0 * atan2f(accelYLPF, accelZLPF); // sign flip to align with accelerometer orientation
-		lpfAccelRollAngle *= (180.0 / 3.1415); // convert to degrees
 
 		// complementary roll angle calculation
 		float partialAccelRoll = 0.2 * accelRollAngle;
@@ -612,14 +601,10 @@ int main(void)
 
 	  	// calculate pitch angle from gyro
 	  	gyroPitchAngle = deltaT * gY + oldPitchAngle;
-	  	lpfGyroPitchAngle = deltaT * gyroYLPF + oldPitchAngle;
 
 		//calculate pitch angle from acceleration
 		float accelPitchAngle = atan2f(aX, aZ);
 		accelPitchAngle *= (180.0 / 3.1415); // convert to degrees
-
-		float lpfAccelPitchAngle = atan2f(accelXLPF, accelZLPF);
-		lpfAccelPitchAngle *= (180.0 / 3.1415); // convert to degrees
 
 		// complementary pitch angle calculation
 		float partialAccelPitch = 0.2 * accelPitchAngle;
@@ -651,15 +636,6 @@ int main(void)
 		float pitchCmd = kp * errorPitch;
 		float yawCmd = 0; // TODO: calculate appropriate yaw comman
 
-//		// calculate angular command integral terms
-//		float ki = 0.00;
-//		rollCmd += (ki * errorRoll) + oldRollCmd;
-//		pitchCmd += (ki * errorPitch) + oldPitchCmd;
-
-		// calculate angular command derivative terms
-		//float kd = 0.0;
-		rollCmd += kd * (errorRoll - oldErrorRoll);
-		pitchCmd += kd * (errorPitch - oldErrorPitch);
 
 		oldRollCmd = rollCmd;
 		oldPitchCmd = pitchCmd;
@@ -683,12 +659,12 @@ int main(void)
 		if(uartReceive[0] == 'w')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kp += 0.00000002;
+			kp += 0.000000001;
 		}
 		if(uartReceive[0] == 's')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kp -= 0.00000002;
+			kp -= 0.000000001;
 		}
 
 		if(kp < 0)
