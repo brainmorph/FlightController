@@ -289,7 +289,7 @@ void configMPUFilter()
 	config = readMPUreg(0x1A);
 
 	config &= 0xF8;
-	config |= 0x4; // this is the value that goes into register
+	config |= 0x6; // this is the value that goes into register
 
 	writeMPUreg(0x1A, config);
 }
@@ -480,7 +480,7 @@ int main(void)
 		if(motor4 < 0)
 			motor4 = 0;
 
-		int motorMax = 25;
+		int motorMax = 50;
 		if(motor1 > motorMax)
 			motor1 = motorMax;
 		if(motor2 > motorMax)
@@ -537,10 +537,10 @@ int main(void)
 		setting += min;
 		htim4.Instance->CCR4 = setting;
 
-		uint8_t uartData[70] = {0};
-		snprintf(uartData, sizeof(uartData), "[%d, %d, %d, %d]   ",
-				motor1, motor2, motor3, motor4);
-		HAL_UART_Transmit(&huart4, uartData, 150, 5);
+//		uint8_t uartData[70] = {0};
+//		snprintf(uartData, sizeof(uartData), "[%d, %d, %d, %d]   ",
+//				motor1, motor2, motor3, motor4);
+//		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 	}
 
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
@@ -555,6 +555,9 @@ int main(void)
 	//TODO: CLEAN UP ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	configMPUFilter();
+
+	float kp = 0.0;
+	float kd = 0.0;
 
 	uint32_t PREVIOUS_MS = 0;
 	float gyroRollAngle = 0;
@@ -630,9 +633,9 @@ int main(void)
 //				count, deltaT, aX, aY, aZ, gX, gY, gZ);
 //		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
-	  	snprintf(uartData, sizeof(uartData), " %+02.2f, %+02.2f, %+.3f\r\n",
-	  			calculatedRollAngle, calculatedPitchAngle, deltaT);
-		HAL_UART_Transmit(&huart4, uartData, 150, 5);
+//	  	snprintf(uartData, sizeof(uartData), " %+02.2f, %+02.2f, %+.3f\r\n",
+//	  			calculatedRollAngle, calculatedPitchAngle, deltaT);
+//		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
 		// LPF calculated angles
 //		lpf(&calculatedRollAngleLPF, calculatedRollAngle, 0.2);
@@ -643,7 +646,7 @@ int main(void)
 		float errorPitch = 0.0 - calculatedPitchAngle; // my setpoint is 0
 
 		// calculate angular command proportional terms
-		float kp = 0.2;
+		//float kp = 0.0;
 		float rollCmd = kp * errorRoll;
 		float pitchCmd = kp * errorPitch;
 		float yawCmd = 0; // TODO: calculate appropriate yaw comman
@@ -654,7 +657,7 @@ int main(void)
 //		pitchCmd += (ki * errorPitch) + oldPitchCmd;
 
 		// calculate angular command derivative terms
-		float kd = 0.3;
+		//float kd = 0.0;
 		rollCmd += kd * (errorRoll - oldErrorRoll);
 		pitchCmd += kd * (errorPitch - oldErrorPitch);
 
@@ -673,6 +676,27 @@ int main(void)
 		}
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
+
+
+		uint8_t uartReceive[2] = {0};
+		HAL_UART_Receive(&huart4, uartReceive, 1, 1);
+		if(uartReceive[0] == 'w')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			kp += 0.00000002;
+		}
+		if(uartReceive[0] == 's')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			kp -= 0.00000002;
+		}
+
+		if(kp < 0)
+		{
+			kp = 0;
+		}
+
+
 
 
 //
