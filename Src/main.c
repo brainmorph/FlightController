@@ -633,10 +633,12 @@ int main(void)
 		float errorRoll = 0.0 - calculatedRollAngle; // my setpoint is 0
 		float errorPitch = 0.0 - calculatedPitchAngle; // my setpoint is 0
 
-		// calculate angular command proportional terms
-		//float kp = 0.0;
-		float rollCmd = kp * errorRoll;
-		float pitchCmd = kp * errorPitch;
+		// calculate derivative
+		float derivativeRoll = (errorRoll - oldErrorRoll) / deltaT;
+		float derivativePitch = (errorPitch - oldErrorPitch) / deltaT;
+
+		float rollCmd = kp * errorRoll + kd * derivativeRoll;
+		float pitchCmd = kp * errorPitch + kd * derivativePitch;
 		float yawCmd = 0; // TODO: calculate appropriate yaw comman
 
 
@@ -669,11 +671,21 @@ int main(void)
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 			kp -= 0.000000001;
 		}
+		if(uartReceive[0] == 'q')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			kd += 0.000000001;
+		}
+		if(uartReceive[0] == 'a')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			kd -= 0.000000001;
+		}
 
 		if(kp < 0)
-		{
 			kp = 0;
-		}
+		if(kd < 0)
+			kd = 0;
 
 
 
