@@ -205,10 +205,19 @@ void readCurrentAccelerationValues(float* floatX, float* floatY, float* floatZ)
 //	temp = temp << 8;
 //	temp |= (0x00FF) & readMPUreg(0x42); // LSB
 
-	*floatX = (float)accelX * (float)(1.0/16384.0); //multiply reading with Full Scale value
-	*floatY = (float)accelY * (float)(1.0/16384.0); //multiply reading with Full Scale value
-	*floatZ = (float)accelZ * (float)(1.0/16384.0); //multiply reading with Full Scale value
-	//*floatTemp = ((float)temp / 340.0) + 36.53;
+//	*floatX = (float)accelX * (float)(1.0/16384.0); //multiply reading with Full Scale value
+//	*floatY = (float)accelY * (float)(1.0/16384.0); //multiply reading with Full Scale value
+//	*floatZ = (float)accelZ * (float)(1.0/16384.0); //multiply reading with Full Scale value
+//	//*floatTemp = ((float)temp / 340.0) + 36.53;
+
+	*floatX = (float)accelX * (8.0/32767.0); // FS=+-8g
+	*floatY = (float)accelY * (8.0/32767.0);
+	*floatZ = (float)accelZ * (8.0/32767.0);
+
+	//convert from g to m/s^2
+	*floatX *= 9.807;
+	*floatY *= 9.807;
+	*floatZ *= 9.807;
 }
 
 #define gyroRunningLen 4 // must be a power of 2
@@ -277,9 +286,14 @@ void readCurrentGyroValues(float* floatX, float* floatY, float* floatZ)
 	gyroZ = gyroZ << 8;
 	gyroZ |= (0x00FF) & readMPUreg(0x48); // LSB
 
-	*floatX = (float)gyroX * (float)(1.0/131.0); //multiply reading with Full Scale value
-	*floatY = (float)gyroY * (float)(1.0/131.0); //multiply reading with Full Scale value
-	*floatZ = (float)gyroZ * (float)(1.0/131.0); //multiply reading with Full Scale value
+//	*floatX = (float)gyroX * (float)(1.0/131.0); //multiply reading with Full Scale value
+//	*floatY = (float)gyroY * (float)(1.0/131.0); //multiply reading with Full Scale value
+//	*floatZ = (float)gyroZ * (float)(1.0/131.0); //multiply reading with Full Scale value
+
+	*floatX = (float)gyroX * (500.0/32767.0); // FS=+-500 deg/s
+	*floatY = (float)gyroY * (500.0/32767.0);
+	*floatZ = (float)gyroZ * (500.0/32767.0);
+
 }
 
 void configMPUFilter()
@@ -289,7 +303,7 @@ void configMPUFilter()
 	config = readMPUreg(0x1A);
 
 	config &= 0xF8;
-	config |= 0x6; // this is the value that goes into register
+	config |= 0x4; // this is the value that goes into register
 
 	writeMPUreg(0x1A, config);
 }
@@ -387,13 +401,19 @@ int main(void)
 	//let's try to read a register over I2C
 	readMPUreg(0x75);
 	readMPUreg(0x6B);
-	writeMPUreg(0x6B, 0x00);
+	writeMPUreg(0x6B, 0x00); // wake the IMU
 	readMPUreg(0x6B);
 	readMPUreg(0x6B);
 
-	readMPUreg(0x1C); //read accel config register
+	readMPUreg(0x1C); // read accel config register
+	writeMPUreg(0x1C, 0x10); // configure fullscale for +-8 g
+	readMPUreg(0x1C); // confirm
 
+	readMPUreg(0x1B); // read gyro config register
+	writeMPUreg(0x1B, 0x08); // configure fullscale for +- 500 degress/s
+	readMPUreg(0x1B); // confirm
 
+	configMPUFilter(); // apply filtering to IMU readings
 
 	uint32_t count=0;
 	float avgAccelX=0, avgAccelY=0, avgAccelZ=0, gyroX=0, gyroY=0, gyroZ=0;
@@ -480,7 +500,7 @@ int main(void)
 		if(motor4 < 0)
 			motor4 = 0;
 
-		int motorMax = 50;
+		int motorMax = 100;
 		if(motor1 > motorMax)
 			motor1 = motorMax;
 		if(motor2 > motorMax)
@@ -537,10 +557,10 @@ int main(void)
 		setting += min;
 		htim4.Instance->CCR4 = setting;
 
-//		uint8_t uartData[70] = {0};
-//		snprintf(uartData, sizeof(uartData), "[%d, %d, %d, %d]   ",
-//				motor1, motor2, motor3, motor4);
-//		HAL_UART_Transmit(&huart4, uartData, 150, 5);
+		uint8_t uartData[70] = {0};
+		snprintf(uartData, sizeof(uartData), "[%02d, %02d, %02d, %02d]   ",
+				motor1, motor2, motor3, motor4);
+		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 	}
 
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
@@ -556,8 +576,6 @@ int main(void)
 		setPWM(FL, FR, BR, BL);
 	}
 	//TODO: CLEAN UP ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-	configMPUFilter();
 
 	float kp = 0.0;
 	float kd = 0.0;
@@ -621,9 +639,9 @@ int main(void)
 //				count, deltaT, aX, aY, aZ, gX, gY, gZ);
 //		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
-//	  	snprintf(uartData, sizeof(uartData), " %+02.2f, %+02.2f, %+.3f\r\n",
-//	  			calculatedRollAngle, calculatedPitchAngle, deltaT);
-//		HAL_UART_Transmit(&huart4, uartData, 150, 5);
+	  	snprintf(uartData, sizeof(uartData), " %+02.2f, %+02.2f, %+.3f\r\n",
+	  			calculatedRollAngle, calculatedPitchAngle, deltaT);
+		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
 		// LPF calculated angles
 //		lpf(&calculatedRollAngleLPF, calculatedRollAngle, 0.2);
@@ -653,7 +671,7 @@ int main(void)
 		}
 		else
 		{
-			thrustCmd = 15;
+			thrustCmd = 20;
 		}
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
@@ -664,12 +682,12 @@ int main(void)
 		if(uartReceive[0] == 'w')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kp += 0.000000001;
+			kp += 0.00000001;
 		}
 		if(uartReceive[0] == 's')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kp -= 0.000000001;
+			kp -= 0.00000001;
 		}
 		if(uartReceive[0] == 'q')
 		{
