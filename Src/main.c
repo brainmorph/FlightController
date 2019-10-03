@@ -597,6 +597,9 @@ int main(void)
 	float calculatedRollAngleLPF = 0;
 	float calculatedPitchAngleLPF = 0;
 	float thrustCmd = 0;
+	float rollSet = 0.0;
+	float pitchSet = 0.0;
+
 	uint8_t uartData[150] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
 	while (1)
 	{
@@ -660,8 +663,8 @@ int main(void)
 //		lpf(&calculatedPitchAngleLPF, calculatedPitchAngle, 0.2);
 
 		// calculate error terms
-		float errorRoll = 0.0 - calculatedRollAngle; // my setpoint is 0
-		float errorPitch = 0.0 - calculatedPitchAngle; // my setpoint is 0
+		float errorRoll = rollSet - calculatedRollAngle; // my setpoint is 0
+		float errorPitch = pitchSet - calculatedPitchAngle; // my setpoint is 0
 
 		// calculate derivative
 		float derivativeRoll = (errorRoll - oldErrorRoll) / deltaT;
@@ -684,6 +687,8 @@ int main(void)
 		else
 		{
 			thrustCmd = 10;
+			kp = 0.08;
+			kd = 0.005;
 		}
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
@@ -694,28 +699,33 @@ int main(void)
 		if(uartReceive[0] == 'w')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kp += 0.01;
+//			kp += 0.01;
+			pitchSet -= 10;
+
 		}
 		if(uartReceive[0] == 's')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kp -= 0.01;
-		}
-		if(uartReceive[0] == 'q')
-		{
-			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kd += 0.0001;
+//			kp -= 0.01;
+			pitchSet += 10;
 		}
 		if(uartReceive[0] == 'a')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kd -= 0.0001;
+//			kd += 0.0001;
+			rollSet += 10;
+		}
+		if(uartReceive[0] == 'd')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+//			kd -= 0.0001;
+			rollSet -= 10;
 		}
 
-		if(kp < 0)
-			kp = 0.0;
-		if(kd < 0)
-			kd = 0.0;
+//		if(kp < 0)
+//			kp = 0.0;
+//		if(kd < 0)
+//			kd = 0.0;
 
 
 
