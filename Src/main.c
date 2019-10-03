@@ -486,8 +486,8 @@ int main(void)
 	}
 
 	// each setting represents motor throttle from 0 to 100%
-	int motor1Setting=0, motor2Setting=0, motor3Setting=0, motor4Setting=0;
-	void setPWM(int motor1, int motor2, int motor3, int motor4)
+	float motor1Setting=0, motor2Setting=0, motor3Setting=0, motor4Setting=0;
+	void setPWM(float motor1, float motor2, float motor3, float motor4)
 	{
 
 		// clip min/max motor output
@@ -500,7 +500,7 @@ int main(void)
 		if(motor4 < 0)
 			motor4 = 0;
 
-		int motorMax = 100;
+		float motorMax = 99;
 		if(motor1 > motorMax)
 			motor1 = motorMax;
 		if(motor2 > motorMax)
@@ -512,22 +512,22 @@ int main(void)
 
 		// transition speed one step at a time
 		if(motor1 > motor1Setting)
-			motor1Setting++;
+			motor1Setting += 0.2;
 		if(motor2 > motor2Setting)
-			motor2Setting++;
+			motor2Setting += 0.2;
 		if(motor3 > motor3Setting)
-			motor3Setting++;
+			motor3Setting += 0.2;
 		if(motor4 > motor4Setting)
-			motor4Setting++;
+			motor4Setting += 0.2;
 
 		if(motor1 < motor1Setting)
-			motor1Setting--;
+			motor1Setting -= 0.2;
 		if(motor2 < motor2Setting)
-			motor2Setting--;
+			motor2Setting -= 0.2;
 		if(motor3 < motor3Setting)
-			motor3Setting--;
+			motor3Setting -= 0.2;
 		if(motor4 < motor4Setting)
-			motor4Setting--;
+			motor4Setting -= 0.2;
 
 
 		// TODO: update min and max values to match new timer settings (I want higher resolution control)
@@ -560,16 +560,16 @@ int main(void)
 		setting += min;
 		htim4.Instance->CCR4 = setting;
 
-		uint8_t uartData[70] = {0};
-		snprintf(uartData, sizeof(uartData), "[%02d, %02d, %02d, %02d]   ",
-				motor1, motor2, motor3, motor4);
-		HAL_UART_Transmit(&huart4, uartData, 150, 5);
+		uint8_t uartData[100] = {0};
+		snprintf(uartData, sizeof(uartData), "[%02.2f, %02.2f, %02.2f, %02.2f]   ",
+				motor1Setting, motor2Setting, motor3Setting, motor4Setting);
+		HAL_UART_Transmit(&huart4, uartData, 100, 5);
 	}
 
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
 	{
-		roll *= 2; // make roll and pitch stronger
-		pitch *= 2; // make roll and pitch stronger
+//		roll *= 2; // make roll and pitch stronger
+//		pitch *= 2; // make roll and pitch stronger
 
 		float FR = thrust + yaw + pitch + roll;
 		float FL = thrust - yaw + pitch - roll;
@@ -597,7 +597,7 @@ int main(void)
 	float calculatedRollAngleLPF = 0;
 	float calculatedPitchAngleLPF = 0;
 	float thrustCmd = 0;
-	uint8_t uartData[90] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
+	uint8_t uartData[150] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
 	while (1)
 	{
 	  	deltaT = (NOW_MS - PREVIOUS_MS)/1000.0;
