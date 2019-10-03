@@ -303,7 +303,7 @@ void configMPUFilter()
 	config = readMPUreg(0x1A);
 
 	config &= 0xF8;
-	config |= 0x4; // this is the value that goes into register
+	config |= 0x6; // this is the value that goes into register
 
 	writeMPUreg(0x1A, config);
 }
