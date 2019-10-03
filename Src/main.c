@@ -605,10 +605,15 @@ int main(void)
 
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3); // scope this pin if you want to see main loop frequency
 
-	  	// read raw accelerometer and gyro
+		uint32_t measureTimeStart = 0;
+		measureTimeStart = NOW_MS;
+
+		// read raw accelerometer and gyro
 	  	float aX = 0, aY = 0, aZ = 0, gX = 0, gY = 0, gZ = 0;
 	  	readCurrentAccelerationValues(&aX, &aY, &aZ);
 	  	readCurrentGyroValues(&gX, &gY, &gZ);
+
+
 
 	  	// calculate roll angle from gyro
 	  	gyroRollAngle = deltaT * gX + oldRollAngle;
@@ -637,6 +642,8 @@ int main(void)
 		oldPitchAngle = calculatedPitchAngle;
 
 
+
+
 	  	// report raw values
 //		snprintf(uartData, sizeof(uartData), "<%ld, %+.3f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n",
 //				count, deltaT, aX, aY, aZ, gX, gY, gZ);
@@ -645,6 +652,8 @@ int main(void)
 	  	snprintf(uartData, sizeof(uartData), " %+02.2f, %+02.2f, %+.3f\r\n",
 	  			calculatedRollAngle, calculatedPitchAngle, deltaT);
 		HAL_UART_Transmit(&huart4, uartData, 150, 5);
+
+		volatile uint32_t samplingTime = NOW_MS - measureTimeStart;
 
 		// LPF calculated angles
 //		lpf(&calculatedRollAngleLPF, calculatedRollAngle, 0.2);
@@ -883,7 +892,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.ClockSpeed = 400000;
   hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
