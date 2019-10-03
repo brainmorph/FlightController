@@ -562,7 +562,7 @@ int main(void)
 
 		uint8_t uartData[100] = {0};
 		snprintf(uartData, sizeof(uartData), "[%02.2f, %02.2f, %02.2f, %02.2f]   ",
-				motor1Setting, motor2Setting, motor3Setting, motor4Setting);
+				motor1, motor2, motor3, motor4);
 		HAL_UART_Transmit(&huart4, uartData, 100, 5);
 	}
 
