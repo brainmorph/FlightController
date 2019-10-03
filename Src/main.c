@@ -358,40 +358,40 @@ uint32_t it1, it2;      // start and stop flag
   */
 int main(void)
 {
-	/* USER CODE BEGIN 1 */
+  /* USER CODE BEGIN 1 */
 
-	/* USER CODE END 1 */
+  /* USER CODE END 1 */
+  
 
+  /* MCU Configuration--------------------------------------------------------*/
 
-	/* MCU Configuration--------------------------------------------------------*/
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
 
-	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-	HAL_Init();
+  /* USER CODE BEGIN Init */
 
-	/* USER CODE BEGIN Init */
+  /* USER CODE END Init */
 
-	/* USER CODE END Init */
+  /* Configure the system clock */
+  SystemClock_Config();
 
-	/* Configure the system clock */
-	SystemClock_Config();
+  /* USER CODE BEGIN SysInit */
 
-	/* USER CODE BEGIN SysInit */
+  /* USER CODE END SysInit */
 
-	/* USER CODE END SysInit */
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_I2C1_Init();
+  MX_TIM4_Init();
+  MX_TIM6_Init();
+  MX_TIM7_Init();
+  MX_UART4_Init();
+  /* USER CODE BEGIN 2 */
 
-	/* Initialize all configured peripherals */
-	MX_GPIO_Init();
-	MX_I2C1_Init();
-	MX_TIM4_Init();
-	MX_TIM6_Init();
-	MX_TIM7_Init();
-	MX_UART4_Init();
-	/* USER CODE BEGIN 2 */
+  /* USER CODE END 2 */
 
-	/* USER CODE END 2 */
-
-	/* Infinite loop */
-	/* USER CODE BEGIN WHILE */
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
 	HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 0, 0); //Enable the peripheral IRQ
 	HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
 	HAL_TIM_Base_Start_IT(&htim6); //Start the timer
@@ -532,8 +532,11 @@ int main(void)
 
 		// TODO: update min and max values to match new timer settings (I want higher resolution control)
 		// TODO: new timer will be 80MHz with pre-scalar of 20 and counter period 80,000
-		int max = 40; // based on 80MHz TIM4 with pre-scalar of 4000 and counter period 400
-		int min = 20; // based on 80MHz TIM4 with pre-scalar of 4000 and counter period 400
+//		int max = 40; // based on 80MHz TIM4 with pre-scalar of 4000 and counter period 400
+//		int min = 20; // based on 80MHz TIM4 with pre-scalar of 4000 and counter period 400
+
+		int max = 4000; // 80MHz with pre-scalar 40 and counter period 40,000
+		int min = 2000; // 80MHz with pre-scalar 40 and counter period 40,000
 
 		int range = max - min;
 
@@ -917,9 +920,9 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 4000;
+  htim4.Init.Prescaler = 40;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 400;
+  htim4.Init.Period = 40000;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
