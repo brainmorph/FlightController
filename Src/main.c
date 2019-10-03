@@ -500,7 +500,7 @@ int main(void)
 		if(motor4 < 0)
 			motor4 = 0;
 
-		float motorMax = 99;
+		float motorMax = 100;
 		if(motor1 > motorMax)
 			motor1 = motorMax;
 		if(motor2 > motorMax)
@@ -512,22 +512,22 @@ int main(void)
 
 		// transition speed one step at a time
 		if(motor1 > motor1Setting)
-			motor1Setting += 0.2;
+			motor1Setting += 1;
 		if(motor2 > motor2Setting)
-			motor2Setting += 0.2;
+			motor2Setting += 1;
 		if(motor3 > motor3Setting)
-			motor3Setting += 0.2;
+			motor3Setting += 1;
 		if(motor4 > motor4Setting)
-			motor4Setting += 0.2;
+			motor4Setting += 1;
 
 		if(motor1 < motor1Setting)
-			motor1Setting -= 0.2;
+			motor1Setting -= 1;
 		if(motor2 < motor2Setting)
-			motor2Setting -= 0.2;
+			motor2Setting -= 1;
 		if(motor3 < motor3Setting)
-			motor3Setting -= 0.2;
+			motor3Setting -= 1;
 		if(motor4 < motor4Setting)
-			motor4Setting -= 0.2;
+			motor4Setting -= 1;
 
 
 		// TODO: update min and max values to match new timer settings (I want higher resolution control)
@@ -541,22 +541,22 @@ int main(void)
 		int range = max - min;
 
 		// motor 1
-		int setting = (motor1Setting/100.0) * (float)range;
+		int setting = (motor1/100.0) * (float)range;
 		setting += min; // add new value to minimum setting
 		htim4.Instance->CCR1 = setting;
 
 		// motor 2
-		setting = (motor2Setting/100.0) * (float)range;
+		setting = (motor2/100.0) * (float)range;
 		setting += min;
 		htim4.Instance->CCR2 = setting;
 
 		// motor 3
-		setting = (motor3Setting/100.0) * (float)range;
+		setting = (motor3/100.0) * (float)range;
 		setting += min;
 		htim4.Instance->CCR3 = setting;
 
 		// motor 4
-		setting = (motor4Setting/100.0) * (float)range;
+		setting = (motor4/100.0) * (float)range;
 		setting += min;
 		htim4.Instance->CCR4 = setting;
 
@@ -668,16 +668,20 @@ int main(void)
 		oldErrorRoll = errorRoll;
 		oldErrorPitch = errorPitch;
 
-		if(NOW_MS < 12000)
+		if(NOW_MS < 10000)
 		{
-			thrustCmd = rollCmd = pitchCmd = yawCmd = 0;
+			thrustCmd = rollCmd = pitchCmd = yawCmd = 0.0;
+			thrustCmd = 100;
 		}
 		else
 		{
-			thrustCmd = 20;
+			thrustCmd = 0;
+			//thrustCmd = 10;
+			//kp = 0.1;
 		}
 
-		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
+		//mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
+		mixPWM(thrustCmd, 0, 0, 0);
 
 
 		uint8_t uartReceive[2] = {0};
@@ -920,9 +924,9 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 40;
+  htim4.Init.Prescaler = 40-1;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 40000;
+  htim4.Init.Period = 40000-1;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
