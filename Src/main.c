@@ -671,17 +671,13 @@ int main(void)
 		if(NOW_MS < 10000)
 		{
 			thrustCmd = rollCmd = pitchCmd = yawCmd = 0.0;
-			thrustCmd = 100;
 		}
 		else
 		{
-			thrustCmd = 0;
-			//thrustCmd = 10;
-			//kp = 0.1;
+			thrustCmd = 10;
 		}
 
-		//mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
-		mixPWM(thrustCmd, 0, 0, 0);
+		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
 
 
 		uint8_t uartReceive[2] = {0};
@@ -689,28 +685,28 @@ int main(void)
 		if(uartReceive[0] == 'w')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kp += 0.00000001;
+			kp += 0.01;
 		}
 		if(uartReceive[0] == 's')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kp -= 0.00000001;
+			kp -= 0.01;
 		}
 		if(uartReceive[0] == 'q')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kd += 0.000000001;
+			kd += 0.0001;
 		}
 		if(uartReceive[0] == 'a')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kd -= 0.000000001;
+			kd -= 0.0001;
 		}
 
 		if(kp < 0)
-			kp = 0;
+			kp = 0.0;
 		if(kd < 0)
-			kd = 0;
+			kd = 0.0;
 
 
 
