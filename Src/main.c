@@ -30,17 +30,33 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+typedef struct
+{
+	float deltaT;
+	int16_t ax;
+	int16_t ay;
+	int16_t az;
+	int16_t gx;
+	int16_t gy;
+	int16_t gz;
+	float calcRoll;
+	float calcPitch;
+}LogData;
+
+#define logLength 4096
+static LogData logValues[logLength];
+static int logIndex = 0;
+
 
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+#define ItemCount(x) sizeof(x)/sizeof(x[0]);
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -200,6 +216,10 @@ void readCurrentAccelerationValues(float* floatX, float* floatY, float* floatZ)
 	accelZ = accelZ << 8;
 	accelZ |= (0x00FF) & readMPUreg(0x40); // LSB
 
+	logValues[logIndex].ax = accelX;
+	logValues[logIndex].ay = accelY;
+	logValues[logIndex].az = accelZ;
+
 //	volatile int16_t temp = 0; // temperature
 //	temp = readMPUreg(0x41); // MSB
 //	temp = temp << 8;
@@ -285,6 +305,10 @@ void readCurrentGyroValues(float* floatX, float* floatY, float* floatZ)
 	gyroZ = readMPUreg(0x47);
 	gyroZ = gyroZ << 8;
 	gyroZ |= (0x00FF) & readMPUreg(0x48); // LSB
+
+	logValues[logIndex].gx = gyroX;
+	logValues[logIndex].gy = gyroY;
+	logValues[logIndex].gz = gyroZ;
 
 //	*floatX = (float)gyroX * (float)(1.0/131.0); //multiply reading with Full Scale value
 //	*floatY = (float)gyroY * (float)(1.0/131.0); //multiply reading with Full Scale value
@@ -560,10 +584,10 @@ int main(void)
 		setting += min;
 		htim4.Instance->CCR4 = setting;
 
-		uint8_t uartData[100] = {0};
-		snprintf(uartData, sizeof(uartData), "[%02.2f, %02.2f, %02.2f, %02.2f]   ",
-				motor1, motor2, motor3, motor4);
-		HAL_UART_Transmit(&huart4, uartData, 100, 5);
+//		uint8_t uartData[100] = {0};
+//		snprintf(uartData, sizeof(uartData), "[%02.2f, %02.2f, %02.2f, %02.2f]   ",
+//				motor1, motor2, motor3, motor4);
+//		HAL_UART_Transmit(&huart4, uartData, 100, 5);
 	}
 
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
@@ -606,6 +630,27 @@ int main(void)
 	  	deltaT = (NOW_MS - PREVIOUS_MS)/1000.0;
 	  	PREVIOUS_MS = NOW_MS;
 
+	  	logValues[logIndex].deltaT = deltaT;
+	  	logIndex++;
+	  	//volatile int test = ItemCount(logValues);
+	  	if(logIndex > logLength-1)
+	  	{
+	  		int c = 0;
+	  		uint8_t logUartData[350] = {0};
+	  		while(c <= logLength-1)
+	  		{
+				snprintf(logUartData, sizeof(logUartData), "%+.3f, %+6d, %+6d, %+6d, %+6d, %+6d, %+6d, %02.2f, %02.2f \r\n",
+						logValues[c].deltaT,
+						logValues[c].ax, logValues[c].ay,logValues[c].az,
+						logValues[c].gx, logValues[c].gy, logValues[c].gz,
+						logValues[c].calcRoll,
+						logValues[c].calcPitch);
+				HAL_UART_Transmit(&huart4, logUartData, 350, 10);
+	  			c++;
+	  		}
+	  		break;
+	  	}
+
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3); // scope this pin if you want to see main loop frequency
 
 		uint32_t measureTimeStart = 0;
@@ -644,7 +689,8 @@ int main(void)
 		float calculatedPitchAngle = partialAccelPitch + partialGyroPitch;
 		oldPitchAngle = calculatedPitchAngle;
 
-
+		logValues[logIndex].calcRoll = calculatedRollAngle;
+		logValues[logIndex].calcPitch = calculatedPitchAngle;
 
 
 	  	// report raw values
@@ -652,11 +698,11 @@ int main(void)
 //				count, deltaT, aX, aY, aZ, gX, gY, gZ);
 //		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
-	  	snprintf(uartData, sizeof(uartData), " %+02.2f, %+02.2f, %+.3f\r\n",
-	  			calculatedRollAngle, calculatedPitchAngle, deltaT);
-		HAL_UART_Transmit(&huart4, uartData, 150, 5);
+//	  	snprintf(uartData, sizeof(uartData), " %+02.2f, %+02.2f, %+.3f\r\n",
+//	  			calculatedRollAngle, calculatedPitchAngle, deltaT);
+//		HAL_UART_Transmit(&huart4, uartData, 150, 5);
 
-		volatile uint32_t samplingTime = NOW_MS - measureTimeStart;
+		volatile uint32_t samplingTime = NOW_MS - measureTimeStart; // move this around to measure time to get here
 
 		// LPF calculated angles
 //		lpf(&calculatedRollAngleLPF, calculatedRollAngle, 0.2);
