@@ -630,29 +630,29 @@ int main(void)
 	  	deltaT = (NOW_MS - PREVIOUS_MS)/1000.0;
 	  	PREVIOUS_MS = NOW_MS;
 
-	  	logValues[logIndex].deltaT = deltaT;
-
-	  	if(NOW_MS > 5000) // ignore first 5 seconds of startup
-	  		logIndex++;
+//	  	logValues[logIndex].deltaT = deltaT;
+//
+//	  	if(NOW_MS > 5000) // ignore first 5 seconds of startup
+//	  		logIndex++;
 
 	  	//volatile int test = ItemCount(logValues);
-	  	if(logIndex > logLength-1)
-	  	{
-	  		int c = 0;
-	  		uint8_t logUartData[350] = {0};
-	  		while(c <= logLength-1)
-	  		{
-				snprintf(logUartData, sizeof(logUartData), "%+.3f, %+6d, %+6d, %+6d, %+6d, %+6d, %+6d, %02.2f, %02.2f \r\n",
-						logValues[c].deltaT,
-						logValues[c].ax, logValues[c].ay,logValues[c].az,
-						logValues[c].gx, logValues[c].gy, logValues[c].gz,
-						logValues[c].calcRoll,
-						logValues[c].calcPitch);
-				HAL_UART_Transmit(&huart4, logUartData, 350, 10);
-	  			c++;
-	  		}
-	  		break;
-	  	}
+//	  	if(logIndex > logLength-1)
+//	  	{
+//	  		int c = 0;
+//	  		uint8_t logUartData[350] = {0};
+//	  		while(c <= logLength-1)
+//	  		{
+//				snprintf(logUartData, sizeof(logUartData), "%+.3f, %+6d, %+6d, %+6d, %+6d, %+6d, %+6d, %02.2f, %02.2f \r\n",
+//						logValues[c].deltaT,
+//						logValues[c].ax, logValues[c].ay,logValues[c].az,
+//						logValues[c].gx, logValues[c].gy, logValues[c].gz,
+//						logValues[c].calcRoll,
+//						logValues[c].calcPitch);
+//				HAL_UART_Transmit(&huart4, logUartData, 350, 10);
+//	  			c++;
+//	  		}
+//	  		break;
+//	  	}
 
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3); // scope this pin if you want to see main loop frequency
 
@@ -735,9 +735,9 @@ int main(void)
 		}
 		else
 		{
-			thrustCmd = 10;
-			kp = 0.20;
-			kd = 0.003;
+			//thrustCmd = 10;
+			kp = 0.1;
+			kd = 0.00;
 		}
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
@@ -749,26 +749,26 @@ int main(void)
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 //			kp += 0.01;
-			pitchSet -= 10;
+			pitchSet -= 5;
 
 		}
 		if(uartReceive[0] == 's')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 //			kp -= 0.01;
-			pitchSet += 10;
+			pitchSet += 5;
 		}
 		if(uartReceive[0] == 'a')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 //			kd += 0.0001;
-			rollSet += 10;
+			rollSet += 5;
 		}
 		if(uartReceive[0] == 'd')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 //			kd -= 0.0001;
-			rollSet -= 10;
+			rollSet -= 5;
 		}
 		if(uartReceive[0] == '0')
 		{
@@ -783,9 +783,11 @@ int main(void)
 		if(uartReceive[0] == '2')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			thrustCmd -= 3;
+			thrustCmd -= 7;
 		}
 
+		if(thrustCmd < 0)
+			thrustCmd = 0;
 
 //		if(kp < 0)
 //			kp = 0.0;
