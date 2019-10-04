@@ -631,7 +631,10 @@ int main(void)
 	  	PREVIOUS_MS = NOW_MS;
 
 	  	logValues[logIndex].deltaT = deltaT;
-	  	logIndex++;
+
+	  	if(NOW_MS > 5000) // ignore first 5 seconds of startup
+	  		logIndex++;
+
 	  	//volatile int test = ItemCount(logValues);
 	  	if(logIndex > logLength-1)
 	  	{
@@ -732,13 +735,13 @@ int main(void)
 		}
 		else
 		{
-			//thrustCmd = 10;
-			kp = 0.10;
+			thrustCmd = 10;
+			kp = 0.20;
 			kd = 0.003;
 		}
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
-
+		//mixPWM(thrustCmd, 0, 0, 0);
 
 		uint8_t uartReceive[2] = {0};
 		HAL_UART_Receive(&huart4, uartReceive, 1, 1);
