@@ -686,9 +686,9 @@ int main(void)
 		}
 		else
 		{
-			thrustCmd = 10;
-			kp = 0.08;
-			kd = 0.005;
+			//thrustCmd = 10;
+			kp = 0.10;
+			kd = 0.003;
 		}
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
@@ -721,6 +721,22 @@ int main(void)
 //			kd -= 0.0001;
 			rollSet -= 10;
 		}
+		if(uartReceive[0] == '0')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			thrustCmd = 0;
+		}
+		if(uartReceive[0] == '1')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			thrustCmd += 3;
+		}
+		if(uartReceive[0] == '2')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			thrustCmd -= 3;
+		}
+
 
 //		if(kp < 0)
 //			kp = 0.0;
