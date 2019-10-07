@@ -327,7 +327,7 @@ void configMPUFilter()
 	config = readMPUreg(0x1A);
 
 	config &= 0xF8;
-	config |= 0x0; // this is the value that goes into register
+	config |= 0x6; // this is the value that goes into register
 
 	writeMPUreg(0x1A, config);
 }
@@ -592,9 +592,6 @@ int main(void)
 
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
 	{
-//		roll *= 2; // make roll and pitch stronger
-//		pitch *= 2; // make roll and pitch stronger
-
 		float FR = thrust + yaw + pitch + roll;
 		float FL = thrust - yaw + pitch - roll;
 		float BR = thrust - yaw - pitch + roll;
@@ -701,6 +698,8 @@ int main(void)
 		// calculate yaw angle from gyro
 		float calculatedYawAngle = deltaT * gZ + oldYawAngle;
 
+
+
 		logValues[logIndex].calcRoll = calculatedRollAngle;
 		logValues[logIndex].calcPitch = calculatedPitchAngle;
 
@@ -748,7 +747,7 @@ int main(void)
 		else
 		{
 			//thrustCmd = 10;
-			kp = 0.13;
+			kp = 0.2;
 			kd = 0.000;
 		}
 
