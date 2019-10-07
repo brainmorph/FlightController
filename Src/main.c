@@ -678,8 +678,8 @@ int main(void)
 		accelRollAngle *= (180.0 / 3.1415); // convert to degrees
 
 		// complementary roll angle calculation
-		float partialAccelRoll = 0.2 * accelRollAngle;
-		float partialGyroRoll = 0.8 * gyroRollAngle;
+		float partialAccelRoll = 0.02 * accelRollAngle;
+		float partialGyroRoll = 0.98 * gyroRollAngle;
 		float calculatedRollAngle = partialAccelRoll + partialGyroRoll;
 		oldRollAngle = calculatedRollAngle;
 
@@ -691,8 +691,8 @@ int main(void)
 		accelPitchAngle *= (180.0 / 3.1415); // convert to degrees
 
 		// complementary pitch angle calculation
-		float partialAccelPitch = 0.2 * accelPitchAngle;
-		float partialGyroPitch = 0.8 * gyroPitchAngle;
+		float partialAccelPitch = 0.02 * accelPitchAngle;
+		float partialGyroPitch = 0.98 * gyroPitchAngle;
 		float calculatedPitchAngle = partialAccelPitch + partialGyroPitch;
 		oldPitchAngle = calculatedPitchAngle;
 
@@ -748,8 +748,8 @@ int main(void)
 		else
 		{
 			//thrustCmd = 10;
-			kp = 0.1;
-			kd = 0.00;
+			kp = 0.2;
+			kd = 0.02;
 		}
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
@@ -761,36 +761,36 @@ int main(void)
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 //			kp += 0.01;
-			pitchSet -= 5;
+			pitchSet -= 1;
 
 		}
 		if(uartReceive[0] == 's')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 //			kp -= 0.01;
-			pitchSet += 5;
+			pitchSet += 1;
 		}
 		if(uartReceive[0] == 'a')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 //			kd += 0.0001;
-			rollSet += 5;
+			rollSet += 1;
 		}
 		if(uartReceive[0] == 'd')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 //			kd -= 0.0001;
-			rollSet -= 5;
+			rollSet -= 1;
 		}
 		if(uartReceive[0] == 'q')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			yawSet -= 5;
+			yawSet -= 1;
 		}
 		if(uartReceive[0] == 'e')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			yawSet +=5;
+			yawSet += 1;
 		}
 		if(uartReceive[0] == '0')
 		{
@@ -823,17 +823,17 @@ int main(void)
 		if(uartReceive[0] == '7')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			thrustCmd = 20;
+			thrustCmd = 25;
 		}
 		if(uartReceive[0] == '8')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			thrustCmd = 25;
+			thrustCmd = 30;
 		}
 		if(uartReceive[0] == '9')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			thrustCmd = 30;
+			thrustCmd = 35;
 		}
 
 
