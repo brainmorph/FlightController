@@ -440,7 +440,7 @@ int main(void)
 	configMPUFilter(); // apply filtering to IMU readings
 
 	uint32_t count=0;
-	float avgAccelX=0, avgAccelY=0, avgAccelZ=0, gyroX=0, gyroY=0, gyroZ=0;
+	float accelX=0, accelY=0, accelZ=0, gyroX=0, gyroY=0, gyroZ=0;
 	float vX=0, vY=0, vZ=0;
 	float aRoll=0, aPitch=0, aYaw=0; // angles with respect to each axis
 	float deltaT = 0.010; // TODO: measure this with firmware timer
@@ -448,22 +448,30 @@ int main(void)
 	float envAccelX=0, envAccelY=0, envAccelZ=0, envGyroX=0, envGyroY=0, envGyroZ = 0;
 
 	// throw away a few samples at the beginning
-	for(int i=0; i<20; i++)
+	for(int i=0; i<200; i++)
 	{
-	  // read acceleration, filter with a running average
-	  readCurrentAccelerationValues(&avgAccelX, &avgAccelY, &avgAccelZ);
-	  accelRunningAverage(&avgAccelX, &avgAccelY, &avgAccelZ); // takes input and factors it into the running average for each variable
+	  // read and discard
+	  readCurrentAccelerationValues(&accelX, &accelY, &accelZ);
 	  readCurrentGyroValues(&gyroX, &gyroY, &gyroZ);
-	  gyroRunningAverage(&gyroX, &gyroY, &gyroZ);
+	  HAL_Delay(10);
 	}
 
-	// use the samples at the beginning as calibration
-	envAccelX = avgAccelX;
-	envAccelY = avgAccelY;
-	envAccelZ = avgAccelZ;
-	envGyroX = gyroX;
-	envGyroY = gyroY;
-	envGyroZ = gyroZ;
+	// average some samples at the beginning
+	for(int i=0; i<400; i++)
+	{
+	  // read acceleration, filter with a running average
+	  readCurrentAccelerationValues(&accelX, &accelY, &accelZ);
+	  readCurrentGyroValues(&gyroX, &gyroY, &gyroZ);
+
+	  envAccelX += accelX / 400.0;
+	  envAccelY += accelY / 400.0;
+	  envAccelZ += accelZ / 400.0;
+	  envGyroX += gyroX / 400.0;
+	  envGyroY += gyroY / 400.0;
+	  envGyroZ += gyroZ / 400.0;
+
+	  HAL_Delay(10);
+	}
 
 	//TODO: CLEAN UPVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 	start_timer();          // start the timer.
@@ -524,7 +532,7 @@ int main(void)
 		if(motor4 < 0)
 			motor4 = 0;
 
-		float motorMax = 15;
+		float motorMax = 20;
 		if(motor1 > motorMax)
 			motor1 = motorMax;
 		if(motor2 > motorMax)
@@ -632,15 +640,21 @@ int main(void)
 	  	deltaT = (NOW_MS - PREVIOUS_MS)/1000.0;
 	  	PREVIOUS_MS = NOW_MS;
 
+	  	if(count < 10)
+	  		deltaT = 0.01;
 
 	  	// read raw accelerometer and gyro
 	  	float aX = 0, aY = 0, aZ = 0, gX = 0, gY = 0, gZ = 0;
 	  	readCurrentAccelerationValues(&aX, &aY, &aZ);
 	  	readCurrentGyroValues(&gX, &gY, &gZ);
 
-	  	gyroRollAngle += (gX - envGyroX) * deltaT;
-	  	gyroPitchAngle += (gY - envGyroY) * deltaT;
-	  	gyroYawAngle += (gZ - envGyroZ) * deltaT;
+	  	float wX = gX - envGyroX;
+	  	float wY = gY - envGyroY;
+	  	float wZ = gZ - envGyroZ;
+
+	  	gyroRollAngle += wX * deltaT;
+	  	gyroPitchAngle += wY * deltaT;
+	  	gyroYawAngle += wZ * deltaT;
 
 	  	// calculate roll angle from acceleration
 		float accelRollAngle = -1.0 * atan2f(aY, aZ); // sign flip to align with accelerometer orientation
@@ -650,7 +664,7 @@ int main(void)
 		float accelPitchAngle = atan2f(aX, aZ);
 		accelPitchAngle *= (180.0 / 3.1415); // convert to degrees
 
-	  	float accelMag = abs(aX) + abs(aY) + abs(aZ);
+	  	float accelMag = fabs(aX) + fabs(aY) + fabs(aZ);
 	  	if(accelMag < 4.9 || accelMag > 19.6) // if acceleration is crazy, ignore calculating angles from it
 	  	{
 			accelRollAngle = 0;
@@ -689,7 +703,7 @@ int main(void)
 		else
 		{
 			thrustCmd = 10;
-			//kp = 0.2;
+			kp = 0.2;
 		}
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
