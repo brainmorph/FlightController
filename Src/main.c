@@ -614,15 +614,19 @@ int main(void)
 	float lpfGyroPitchAngle = 0;
 	float oldRollAngle = 0;
 	float oldPitchAngle = 0;
+	float oldYawAngle = 0;
 	float oldRollCmd = 0;
 	float oldPitchCmd = 0;
+	float oldYawCmd = 0;
 	float oldErrorRoll = 0;
 	float oldErrorPitch = 0;
+	float oldErrorYaw = 0;
 	float calculatedRollAngleLPF = 0;
 	float calculatedPitchAngleLPF = 0;
 	float thrustCmd = 0;
 	float rollSet = 0.0;
 	float pitchSet = 0.0;
+	float yawSet = 0.0;
 
 	uint8_t uartData[150] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
 	while (1)
@@ -692,6 +696,11 @@ int main(void)
 		float calculatedPitchAngle = partialAccelPitch + partialGyroPitch;
 		oldPitchAngle = calculatedPitchAngle;
 
+
+
+		// calculate yaw angle from gyro
+		float calculatedYawAngle = deltaT * gZ + oldYawAngle;
+
 		logValues[logIndex].calcRoll = calculatedRollAngle;
 		logValues[logIndex].calcPitch = calculatedPitchAngle;
 
@@ -714,20 +723,23 @@ int main(void)
 		// calculate error terms
 		float errorRoll = rollSet - calculatedRollAngle; // my setpoint is 0
 		float errorPitch = pitchSet - calculatedPitchAngle; // my setpoint is 0
+		float errorYaw = yawSet - calculatedYawAngle; // setpoint is 0
 
 		// calculate derivative
 		float derivativeRoll = (errorRoll - oldErrorRoll) / deltaT;
 		float derivativePitch = (errorPitch - oldErrorPitch) / deltaT;
+		float derivativeYaw = (errorYaw - oldErrorYaw) / deltaT;
 
 		float rollCmd = kp * errorRoll + kd * derivativeRoll;
 		float pitchCmd = kp * errorPitch + kd * derivativePitch;
-		float yawCmd = 0; // TODO: calculate appropriate yaw comman
+		float yawCmd = kp + errorYaw + kd * derivativeYaw; // TODO: calculate appropriate yaw comman
 
 
 		oldRollCmd = rollCmd;
 		oldPitchCmd = pitchCmd;
 		oldErrorRoll = errorRoll;
 		oldErrorPitch = errorPitch;
+		oldErrorYaw = errorYaw;
 
 		if(NOW_MS < 10000)
 		{
@@ -770,10 +782,23 @@ int main(void)
 //			kd -= 0.0001;
 			rollSet -= 5;
 		}
+		if(uartReceive[0] == 'q')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			yawSet -= 5;
+		}
+		if(uartReceive[0] == 'e')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			yawSet +=5;
+		}
 		if(uartReceive[0] == '0')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 			thrustCmd = 0;
+			rollSet = 0;
+			pitchSet = 0;
+			yawSet = 0;
 		}
 		if(uartReceive[0] == '1')
 		{
@@ -785,6 +810,32 @@ int main(void)
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 			thrustCmd -= 7;
 		}
+		if(uartReceive[0] == '5')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			thrustCmd = 0;
+		}
+		if(uartReceive[0] == '6')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			thrustCmd = 15;
+		}
+		if(uartReceive[0] == '7')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			thrustCmd = 20;
+		}
+		if(uartReceive[0] == '8')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			thrustCmd = 25;
+		}
+		if(uartReceive[0] == '9')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			thrustCmd = 30;
+		}
+
 
 		if(thrustCmd < 0)
 			thrustCmd = 0;
