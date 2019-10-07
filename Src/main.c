@@ -592,8 +592,8 @@ int main(void)
 
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
 	{
-		roll *= 2; // make roll and pitch stronger
-		pitch *= 2; // make roll and pitch stronger
+//		roll *= 2; // make roll and pitch stronger
+//		pitch *= 2; // make roll and pitch stronger
 
 		float FR = thrust + yaw + pitch + roll;
 		float FL = thrust - yaw + pitch - roll;
@@ -748,8 +748,8 @@ int main(void)
 		else
 		{
 			//thrustCmd = 10;
-			kp = 0.2;
-			kd = 0.001;
+			kp = 0.13;
+			kd = 0.002;
 		}
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
