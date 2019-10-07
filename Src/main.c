@@ -327,7 +327,7 @@ void configMPUFilter()
 	config = readMPUreg(0x1A);
 
 	config &= 0xF8;
-	config |= 0x3; // this is the value that goes into register
+	config |= 0x0; // this is the value that goes into register
 
 	writeMPUreg(0x1A, config);
 }
@@ -749,7 +749,7 @@ int main(void)
 		{
 			//thrustCmd = 10;
 			kp = 0.13;
-			kd = 0.002;
+			kd = 0.000;
 		}
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
@@ -847,107 +847,6 @@ int main(void)
 
 
 
-
-//
-//		// let's calculate gyro PID separately for now
-//		float oldGX = gyroX;
-//		float oldGY = gyroY;
-//		float oldGZ = gyroZ;
-//		readCurrentGyroValues(&gyroX, &gyroY, &gyroZ);
-//		gyroRunningAverage(&gyroX, &gyroY, &gyroZ); // takes input and factors it into the running average for each variable
-//
-//		lpf(&oldGX, gyroX);
-//		lpf(&oldGY, gyroY);
-//		lpf(&oldGZ, gyroZ);
-//
-//		// try to Low Pass Filter
-//		//lpf(&gyroLpf, gyroY); // lpf roll
-//
-//		// calculate roll angle from acceleration
-//		float accelRoll = -1.0 * atan2f(oldAY, oldAZ); // sign flip to align with accelerometer orientation
-//		accelRoll *= (180.0 / 3.1415); // convert to degrees
-//
-//		// calculate pitch angle from acceleration
-//		float accelPitch = atan2f(oldAX, oldAZ);
-//		accelPitch *= (180.0 / 3.1415); // convert to degrees
-//
-//		// complementary roll angle calculation
-//		float partialAccelRoll = 0.03 * accelRoll; // take only 2% of acceleration calculated angle
-//		float gyroRoll = -1.0 * oldGX * deltaT + oldRollAngle;
-//		float partialGyroRoll = 0.97 * gyroRoll;
-//		float calculatedRollAngle = partialAccelRoll + partialGyroRoll;
-//		oldRollAngle = calculatedRollAngle;
-//
-//		// complementary pitch angle calculation
-//		float partialAccelPitch = 0.03 * accelPitch;
-//		float gyroPitch = -1.0 * oldGY * deltaT + oldPitchAngle;
-//		float partialGyroPitch = 0.97 * gyroPitch;
-//		float calculatedPitchAngle = partialAccelPitch + partialGyroPitch;
-//		oldPitchAngle = calculatedPitchAngle;
-//
-//		float deadBandGX = gyroX - envGyroX;
-//		float deadBandGY = gyroY - envGyroY;
-//		float deadBandGZ = gyroZ - envGyroZ;
-//
-//		// deadband to get rid of additions from quad vibration
-////		if(deadBandGX > -0.5 && deadBandGX < 0.5)
-////			deadBandGX = 0;
-////		if(deadBandGY > -0.5 && deadBandGY < 0.5)
-////			deadBandGY = 0;
-////		if(deadBandGZ > -0.5 && deadBandGZ < 0.5)
-////			deadBandGZ = 0;
-//
-//		// derive orientation angle from angular velocity
-//		aRoll = -deadBandGX * deltaT + aRoll;
-//		aPitch = -deadBandGY * deltaT + aPitch;
-//		aYaw = -deadBandGZ * deltaT + aYaw;
-//
-//		// calculate error terms
-//		float errorARoll = 0.0 - calculatedRollAngle; // my setpoint is 0
-//		float errorAPitch = 0.0 - calculatedPitchAngle; // my setpoint is 0
-//		float errorAYaw = 0.0 - aYaw; // my setpoint is 0
-//
-//		// calculate angular command (proportional) terms
-//		float kp = 0.01;
-//		float rollCmd = kp * errorARoll;
-//		float pitchCmd = kp * errorAPitch;
-//		float yawCmd = 0; // TODO: calculate appropriate yaw command
-//
-//		if(NOW_MS < 12000)
-//		{
-//			thrustCmd = rollCmd = pitchCmd = yawCmd = 0;
-//		}
-//		else
-//		{
-//			thrustCmd = 20;
-//		}
-//
-//		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
-//
-////		uint8_t uartData[150] = {0};
-////		snprintf(uartData, sizeof(uartData), "\r\n<%ld, %+.2f, %+.2f, %+.2f>\r\n",
-////				count, deltaT, gyroRoll, calculatedRollAngle);
-////		HAL_UART_Transmit(&huart4, uartData, 70, 0x00FF);
-//
-//		uint8_t uartReceive[2] = {0};
-//		HAL_UART_Receive(&huart4, uartReceive, 1, 1);
-//		if(uartReceive[0] == 'w')
-//		{
-//			//HAL_UART_Transmit(&huart4, uartReceive, 2, 0x00FF);
-//			thrustCmd++;
-//		}
-//		if(uartReceive[0] == 's')
-//		{
-//			thrustCmd--;
-//		}
-//
-//		if(thrustCmd < 0)
-//			thrustCmd = 0;
-//
-//		uint8_t uartData[150] = {0};
-//		snprintf(uartData, sizeof(uartData), "<%ld, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f, %+.2f>\r\n",
-//				count, deltaT, oldAX, oldAY, oldAZ, oldGX, oldGY, oldGZ);
-//		HAL_UART_Transmit(&huart4, uartData, 150, 0x00FF);
 
 
 	  count++;
