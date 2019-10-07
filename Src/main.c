@@ -703,7 +703,7 @@ int main(void)
 		else
 		{
 			thrustCmd = 10;
-			kp = 0.2;
+			kp = -0.1;
 		}
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
