@@ -708,8 +708,8 @@ int main(void)
 			kp = 0.1;
 		}
 
-		if(calculatedRollAngle > 65 || calculatedRollAngle < -65 ||
-				calculatedPitchAngle > 65 || calculatedPitchAngle < -65)
+		if(calculatedRollAngle > 90 || calculatedRollAngle < -90 ||
+				calculatedPitchAngle > 90 || calculatedPitchAngle < -90)
 			thrustCmd = rollCmd = pitchCmd = 0; // safety check set
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
