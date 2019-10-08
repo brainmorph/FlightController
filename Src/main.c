@@ -43,7 +43,7 @@ typedef struct
 	float calcPitch;
 }LogData;
 
-#define logLength 4096
+#define logLength 0 //4096
 static LogData logValues[logLength];
 static int logIndex = 0;
 
@@ -327,7 +327,7 @@ void configMPUFilter()
 	config = readMPUreg(0x1A);
 
 	config &= 0xF8;
-	config |= 0x3; // this is the value that goes into register
+	config |= 0x0; // this is the value that goes into register
 
 	writeMPUreg(0x1A, config);
 }
@@ -532,7 +532,7 @@ int main(void)
 		if(motor4 < 0)
 			motor4 = 0;
 
-		float motorMax = 70;
+		float motorMax = 25;
 		if(motor1 > motorMax)
 			motor1 = motorMax;
 		if(motor2 > motorMax)
@@ -600,6 +600,8 @@ int main(void)
 
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
 	{
+		yaw /= 10.0;
+
 		float FR = thrust + yaw + pitch + roll;
 		float FL = thrust - yaw + pitch - roll;
 		float BR = thrust - yaw - pitch + roll;
@@ -671,19 +673,19 @@ int main(void)
 			accelPitchAngle = 0;
 	  	}
 		// complementary roll angle calculation
-		float partialAccelRoll = 0.02 * accelRollAngle;
-		float partialGyroRoll = 0.98 * gyroRollAngle;
+		float partialAccelRoll = 0.2 * accelRollAngle;
+		float partialGyroRoll = -0.8 * gyroRollAngle;
 		float calculatedRollAngle = partialAccelRoll + partialGyroRoll;
 		oldRollAngle = calculatedRollAngle;
 
 		// complementary pitch angle calculation
-		float partialAccelPitch = 0.02 * accelPitchAngle;
-		float partialGyroPitch = 0.98 * gyroPitchAngle;
+		float partialAccelPitch = 0.2 * accelPitchAngle;
+		float partialGyroPitch = -0.8 * gyroPitchAngle;
 		float calculatedPitchAngle = partialAccelPitch + partialGyroPitch;
 		oldPitchAngle = calculatedPitchAngle;
 
 		// calculate yaw angle from gyro
-		float calculatedYawAngle = gyroYawAngle; // there is no complementary filtering for yaw
+		float calculatedYawAngle = -1.0 * gyroYawAngle; // there is no complementary filtering for yaw
 
 
 		// calculate error terms
@@ -692,9 +694,9 @@ int main(void)
 		float errorYaw = yawSet - calculatedYawAngle; // setpoint is 0
 
 
-		float rollCmd = -1.0 * kp * errorRoll;
-		float pitchCmd = -1.0 * kp * errorPitch;
-		float yawCmd = -1.0 * kp * errorYaw; //kp + errorYaw;
+		float rollCmd = 1.0 * kp * errorRoll;
+		float pitchCmd = 1.0 * kp * errorPitch;
+		float yawCmd = 1.0 * kp * errorYaw; //kp + errorYaw;
 
 		if(NOW_MS < 10000)
 		{
@@ -703,7 +705,7 @@ int main(void)
 		else
 		{
 			//thrustCmd = 10;
-			//kp = 0.01;
+			kp = 0.1;
 		}
 
 		if(calculatedRollAngle > 65 || calculatedRollAngle < -65 ||
