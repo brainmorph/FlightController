@@ -327,7 +327,7 @@ void configMPUFilter()
 	config = readMPUreg(0x1A);
 
 	config &= 0xF8;
-	config |= 0x0; // this is the value that goes into register
+	config |= 0x3; // this is the value that goes into register
 
 	writeMPUreg(0x1A, config);
 }
@@ -692,9 +692,9 @@ int main(void)
 		float errorYaw = yawSet - calculatedYawAngle; // setpoint is 0
 
 
-		float rollCmd = kp * errorRoll;
-		float pitchCmd = kp * errorPitch;
-		float yawCmd = 0; //kp + errorYaw;
+		float rollCmd = -1.0 * kp * errorRoll;
+		float pitchCmd = -1.0 * kp * errorPitch;
+		float yawCmd = -1.0 * kp * errorYaw; //kp + errorYaw;
 
 		if(NOW_MS < 10000)
 		{
@@ -703,11 +703,11 @@ int main(void)
 		else
 		{
 			//thrustCmd = 10;
-			kp = -0.1;
+			//kp = 0.01;
 		}
 
-		if(calculatedRollAngle > 45 || calculatedRollAngle < -45 ||
-				calculatedPitchAngle > 45 || calculatedPitchAngle < -45)
+		if(calculatedRollAngle > 65 || calculatedRollAngle < -65 ||
+				calculatedPitchAngle > 65 || calculatedPitchAngle < -65)
 			thrustCmd = rollCmd = pitchCmd = 0; // safety check set
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
@@ -717,6 +717,18 @@ int main(void)
 	  	// RX code----------------------------
 		uint8_t uartReceive[2] = {0};
 		HAL_UART_Receive(&huart4, uartReceive, 1, 1);
+		if(uartReceive[0] == 'i')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			kp += 0.01;
+
+		}
+		if(uartReceive[0] == 'k')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			kp -= 0.01;
+
+		}
 		if(uartReceive[0] == 'w')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
