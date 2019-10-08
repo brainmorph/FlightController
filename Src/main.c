@@ -734,33 +734,33 @@ int main(void)
 		if(uartReceive[0] == 'w')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			pitchSet += 3;
+			pitchSet -= 3;
 
 		}
 		if(uartReceive[0] == 's')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			pitchSet -= 3;
+			pitchSet += 3;
 		}
 		if(uartReceive[0] == 'a')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			rollSet -= 3;
+			rollSet += 3;
 		}
 		if(uartReceive[0] == 'd')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			rollSet += 3;
+			rollSet -= 3;
 		}
 		if(uartReceive[0] == 'q')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			yawSet += 3;
+			yawSet -= 3;
 		}
 		if(uartReceive[0] == 'e')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			yawSet -= 3;
+			yawSet += 3;
 		}
 		if(uartReceive[0] == '0')
 		{
