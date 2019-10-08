@@ -532,7 +532,7 @@ int main(void)
 		if(motor4 < 0)
 			motor4 = 0;
 
-		float motorMax = 20;
+		float motorMax = 70;
 		if(motor1 > motorMax)
 			motor1 = motorMax;
 		if(motor2 > motorMax)
@@ -705,6 +705,10 @@ int main(void)
 			//thrustCmd = 10;
 			kp = -0.1;
 		}
+
+		if(calculatedRollAngle > 45 || calculatedRollAngle < -45 ||
+				calculatedPitchAngle > 45 || calculatedPitchAngle < -45)
+			thrustCmd = rollCmd = pitchCmd = 0; // safety check set
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
 
