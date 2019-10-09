@@ -697,9 +697,22 @@ int main(void)
 		float errorYaw = yawSet - calculatedYawAngle; // setpoint is 0
 
 
-		float rollCmd = 1.0 * kp * errorRoll;
-		float pitchCmd = 1.0 * kp * errorPitch;
-		float yawCmd = 1.0 * kp * errorYaw; //kp + errorYaw;
+//		float rollCmd = kp * errorRoll;
+//		float pitchCmd = kp * errorPitch;
+//		float yawCmd = kp * errorYaw; //kp + errorYaw;
+
+
+
+		// calculate derivative
+		float derivativeRoll = (errorRoll - oldErrorRoll) / deltaT;
+		float derivativePitch = (errorPitch - oldErrorPitch) / deltaT;
+		float derivativeYaw = (errorYaw - oldErrorYaw) / deltaT;
+
+		float rollCmd = kp * errorRoll + kd * derivativeRoll;
+		float pitchCmd = kp * errorPitch + kd * derivativePitch;
+		float yawCmd = kp * errorYaw; //kp + errorYaw;
+
+
 
 		if(NOW_MS < 10000)
 		{
@@ -716,6 +729,8 @@ int main(void)
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
 
+		oldErrorRoll = errorRoll;
+		oldErrorPitch = errorPitch;
 
 
 	  	// RX code----------------------------
@@ -731,6 +746,18 @@ int main(void)
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 			kp -= 0.01;
+
+		}
+		if(uartReceive[0] == 'u')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			kd += 0.01;
+
+		}
+		if(uartReceive[0] == 'j')
+		{
+			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			kd -= 0.01;
 
 		}
 		if(uartReceive[0] == 'w')
