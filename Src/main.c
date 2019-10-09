@@ -601,7 +601,7 @@ int main(void)
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
 	{
 		// TODO: move these multipliers into 3 separate PID loops, one for each control axis
-		pitch *= 1.5; // make pitch a little bit stronger than roll since the battery packs lie on this axis
+		pitch *= 2.5; // make pitch a little bit stronger than roll since the battery packs lie on this axis
 		//roll *= 1.0;
 		yaw /= 4.0; // yaw needs to be cut back heavily
 
