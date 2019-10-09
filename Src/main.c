@@ -600,7 +600,10 @@ int main(void)
 
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
 	{
-		yaw /= 8.0;
+		// TODO: move these multipliers into 3 separate PID loops, one for each control axis
+		pitch *= 1.5; // make pitch a little bit stronger than roll since the battery packs lie on this axis
+		//roll *= 1.0;
+		yaw /= 8.0; // yaw needs to be cut back heavily
 
 		float FR = thrust + yaw + pitch + roll;
 		float FL = thrust - yaw + pitch - roll;
@@ -710,7 +713,7 @@ int main(void)
 
 		if(calculatedRollAngle > 90 || calculatedRollAngle < -90 ||
 				calculatedPitchAngle > 90 || calculatedPitchAngle < -90)
-			thrustCmd = rollCmd = pitchCmd = 0; // safety check set
+			thrustCmd = rollCmd = pitchCmd = yawCmd = 0; // safety check set
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
 
