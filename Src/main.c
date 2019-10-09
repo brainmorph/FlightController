@@ -327,7 +327,7 @@ void configMPUFilter()
 	config = readMPUreg(0x1A);
 
 	config &= 0xF8;
-	config |= 0x0; // this is the value that goes into register
+	config |= 0x3; // this is the value that goes into register
 
 	writeMPUreg(0x1A, config);
 }
@@ -603,7 +603,7 @@ int main(void)
 		// TODO: move these multipliers into 3 separate PID loops, one for each control axis
 		pitch *= 1.5; // make pitch a little bit stronger than roll since the battery packs lie on this axis
 		//roll *= 1.0;
-		yaw /= 8.0; // yaw needs to be cut back heavily
+		yaw /= 4.0; // yaw needs to be cut back heavily
 
 		float FR = thrust + yaw + pitch + roll;
 		float FL = thrust - yaw + pitch - roll;
