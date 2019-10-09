@@ -724,13 +724,13 @@ int main(void)
 		if(uartReceive[0] == 'i')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kp += 0.1;
+			kp += 0.01;
 
 		}
 		if(uartReceive[0] == 'k')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kp -= 0.1;
+			kp -= 0.01;
 
 		}
 		if(uartReceive[0] == 'w')
