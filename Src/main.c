@@ -600,7 +600,7 @@ int main(void)
 
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
 	{
-		yaw /= 10.0;
+		yaw /= 8.0;
 
 		float FR = thrust + yaw + pitch + roll;
 		float FL = thrust - yaw + pitch - roll;
@@ -722,13 +722,13 @@ int main(void)
 		if(uartReceive[0] == 'i')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kp += 0.01;
+			kp += 0.1;
 
 		}
 		if(uartReceive[0] == 'k')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kp -= 0.01;
+			kp -= 0.1;
 
 		}
 		if(uartReceive[0] == 'w')
