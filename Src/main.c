@@ -708,7 +708,6 @@ int main(void)
 		else
 		{
 			//thrustCmd = 10;
-			kp = 0.1;
 		}
 
 		if(calculatedRollAngle > 90 || calculatedRollAngle < -90 ||
