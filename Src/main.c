@@ -327,7 +327,7 @@ void configMPUFilter()
 	config = readMPUreg(0x1A);
 
 	config &= 0xF8;
-	config |= 0x3; // this is the value that goes into register
+	config |= 0x0; // this is the value that goes into register
 
 	writeMPUreg(0x1A, config);
 }
@@ -676,14 +676,14 @@ int main(void)
 			accelPitchAngle = 0;
 	  	}
 		// complementary roll angle calculation
-		float partialAccelRoll = 0.2 * accelRollAngle;
-		float partialGyroRoll = -0.8 * gyroRollAngle;
+		float partialAccelRoll = 0.02 * accelRollAngle;
+		float partialGyroRoll = -0.98 * gyroRollAngle;
 		float calculatedRollAngle = partialAccelRoll + partialGyroRoll;
 		oldRollAngle = calculatedRollAngle;
 
 		// complementary pitch angle calculation
-		float partialAccelPitch = 0.2 * accelPitchAngle;
-		float partialGyroPitch = -0.8 * gyroPitchAngle;
+		float partialAccelPitch = 0.02 * accelPitchAngle;
+		float partialGyroPitch = -0.98 * gyroPitchAngle;
 		float calculatedPitchAngle = partialAccelPitch + partialGyroPitch;
 		oldPitchAngle = calculatedPitchAngle;
 
