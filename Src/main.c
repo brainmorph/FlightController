@@ -532,7 +532,7 @@ int main(void)
 		if(motor4 < 0)
 			motor4 = 0;
 
-		float motorMax = 30;
+		float motorMax = 60;
 		if(motor1 > motorMax)
 			motor1 = motorMax;
 		if(motor2 > motorMax)
