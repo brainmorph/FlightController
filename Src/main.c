@@ -601,7 +601,7 @@ int main(void)
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
 	{
 		// TODO: move these multipliers into 3 separate PID loops, one for each control axis
-		pitch *= 2.5; // make pitch a little bit stronger than roll since the battery packs lie on this axis
+		//pitch *= 2.5; // make pitch a little bit stronger than roll since the battery packs lie on this axis
 		//roll *= 1.0;
 		yaw /= 4.0; // yaw needs to be cut back heavily
 
@@ -621,8 +621,10 @@ int main(void)
 	float gyroRollAngle = 0;
 	float gyroPitchAngle = 0;
 	float gyroYawAngle = 0;
-	float lpfGyroRollAngle = 0;
-	float lpfGyroPitchAngle = 0;
+	float lpfErrorRoll = 0;
+	float lpfErrorPitch = 0;
+	float lpfErrorRollOLD = 0;
+	float lpfErrorPitchOLD = 0;
 	float oldRollAngle = 0;
 	float oldPitchAngle = 0;
 	float oldYawAngle = 0;
@@ -704,9 +706,15 @@ int main(void)
 
 
 		// calculate derivative
-		float derivativeRoll = (errorRoll - oldErrorRoll) / deltaT;
-		float derivativePitch = (errorPitch - oldErrorPitch) / deltaT;
+		lpfErrorRoll += 0.4 * errorRoll; // lpf the error signal to prepare for derivative
+		lpfErrorPitch += 0.4 * errorPitch; // lpf the error signal to prepare for derivative
+
+		float derivativeRoll = (lpfErrorRoll - lpfErrorRollOLD) / deltaT; // take derivative of lpf signal
+		float derivativePitch = (lpfErrorPitch - lpfErrorPitchOLD) / deltaT; // take derivative of lpf signal
 		float derivativeYaw = (errorYaw - oldErrorYaw) / deltaT;
+
+		lpfErrorRollOLD = lpfErrorRoll; // done using lpfErrorRollOLD so time to update it
+		lpfErrorPitchOLD = lpfErrorPitch; // done using lpfErrorPitchOLD so time to update it
 
 		float rollCmd = kp * errorRoll + kd * derivativeRoll;
 		float pitchCmd = kp * errorPitch + kd * derivativePitch;
@@ -798,6 +806,8 @@ int main(void)
 			rollSet = 0;
 			pitchSet = 0;
 			yawSet = 0;
+			kp = 0;
+			kd = 0;
 		}
 		if(uartReceive[0] == '1')
 		{
