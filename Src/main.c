@@ -644,6 +644,8 @@ int main(void)
 	uint8_t uartData[150] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
 	while (1)
 	{
+		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3); // scope this pin if you want to see main loop frequency
+
 	  	deltaT = (NOW_MS - PREVIOUS_MS)/1000.0;
 	  	PREVIOUS_MS = NOW_MS;
 
@@ -851,6 +853,9 @@ int main(void)
 		// RX code end------------------------------------
 
 
+		// force main flight loop to run at 100Hz
+		while(NOW_MS - PREVIOUS_MS < 10)
+			; // kill time
 
 	  count++;
 
