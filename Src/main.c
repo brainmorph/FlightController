@@ -708,8 +708,15 @@ int main(void)
 
 
 		// calculate derivative
-		lpfErrorRoll += 0.4 * errorRoll; // lpf the error signal to prepare for derivative
-		lpfErrorPitch += 0.4 * errorPitch; // lpf the error signal to prepare for derivative
+		if(lpfErrorRollOLD < errorRoll) // apply lpf directionally otherwise you get unbounded DC term
+			lpfErrorRoll += 0.4 * fabs(errorRoll); // lpf the error signal to prepare for derivative
+		else
+			lpfErrorRoll -= 0.4 * fabs(errorRoll);
+
+		if(lpfErrorPitchOLD < errorPitch)
+			lpfErrorPitch += 0.4 * fabs(errorPitch); // lpf the error signal to prepare for derivative
+		else
+			lpfErrorPitch -= 0.4 * fabs(errorPitch);
 
 		float derivativeRoll = (lpfErrorRoll - lpfErrorRollOLD) / deltaT; // take derivative of lpf signal
 		float derivativePitch = (lpfErrorPitch - lpfErrorPitchOLD) / deltaT; // take derivative of lpf signal
@@ -853,8 +860,8 @@ int main(void)
 		// RX code end------------------------------------
 
 
-		// force main flight loop to run at 100Hz
-		while(NOW_MS - PREVIOUS_MS < 10)
+		// force main flight loop to run at 250Hz
+		while(NOW_MS - PREVIOUS_MS < 4)
 			; // kill time
 
 	  count++;
