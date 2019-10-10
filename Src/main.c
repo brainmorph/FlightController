@@ -709,14 +709,14 @@ int main(void)
 
 		// calculate derivative
 		if(lpfErrorRollOLD < errorRoll) // apply lpf directionally otherwise you get unbounded DC term
-			lpfErrorRoll += 0.4 * fabs(errorRoll); // lpf the error signal to prepare for derivative
+			lpfErrorRoll += 0.1 * fabs(errorRoll); // lpf the error signal to prepare for derivative
 		else
-			lpfErrorRoll -= 0.4 * fabs(errorRoll);
+			lpfErrorRoll -= 0.1 * fabs(errorRoll);
 
 		if(lpfErrorPitchOLD < errorPitch)
-			lpfErrorPitch += 0.4 * fabs(errorPitch); // lpf the error signal to prepare for derivative
+			lpfErrorPitch += 0.1 * fabs(errorPitch); // lpf the error signal to prepare for derivative
 		else
-			lpfErrorPitch -= 0.4 * fabs(errorPitch);
+			lpfErrorPitch -= 0.1 * fabs(errorPitch);
 
 		float derivativeRoll = (lpfErrorRoll - lpfErrorRollOLD) / deltaT; // take derivative of lpf signal
 		float derivativePitch = (lpfErrorPitch - lpfErrorPitchOLD) / deltaT; // take derivative of lpf signal
@@ -750,6 +750,8 @@ int main(void)
 		oldErrorPitch = errorPitch;
 
 
+
+
 	  	// RX code----------------------------
 		uint8_t uartReceive[2] = {0};
 		HAL_UART_Receive(&huart4, uartReceive, 1, 1);
@@ -768,13 +770,13 @@ int main(void)
 		if(uartReceive[0] == 'u')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kd += 0.01;
+			kd += 0.001;
 
 		}
 		if(uartReceive[0] == 'j')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			kd -= 0.01;
+			kd -= 0.001;
 
 		}
 		if(uartReceive[0] == 'w')
@@ -854,11 +856,15 @@ int main(void)
 			thrustCmd = 35;
 		}
 
+		// RX code end------------------------------------
+
 
 		if(thrustCmd < 0)
 			thrustCmd = 0;
-		// RX code end------------------------------------
-
+		if(kp < 0)
+			kp = 0;
+		if(kd < 0)
+			kd = 0;
 
 		// force main flight loop to run at 250Hz
 		while(NOW_MS - PREVIOUS_MS < 4)
