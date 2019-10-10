@@ -706,17 +706,20 @@ int main(void)
 //		float yawCmd = kp * errorYaw; //kp + errorYaw;
 
 
+		volatile int dummyStopHere;
+		if(calculatedRollAngle > 45)
+			dummyStopHere = 0;
 
 		// calculate derivative
 		if(lpfErrorRollOLD < errorRoll) // apply lpf directionally otherwise you get unbounded DC term
-			lpfErrorRoll += 0.1 * fabs(errorRoll); // lpf the error signal to prepare for derivative
+			lpfErrorRoll += 0.01 * fabs(errorRoll); // lpf the error signal to prepare for derivative
 		else
-			lpfErrorRoll -= 0.1 * fabs(errorRoll);
+			lpfErrorRoll -= 0.01 * fabs(errorRoll);
 
 		if(lpfErrorPitchOLD < errorPitch)
-			lpfErrorPitch += 0.1 * fabs(errorPitch); // lpf the error signal to prepare for derivative
+			lpfErrorPitch += 0.01 * fabs(errorPitch); // lpf the error signal to prepare for derivative
 		else
-			lpfErrorPitch -= 0.1 * fabs(errorPitch);
+			lpfErrorPitch -= 0.01 * fabs(errorPitch);
 
 		float derivativeRoll = (lpfErrorRoll - lpfErrorRollOLD) / deltaT; // take derivative of lpf signal
 		float derivativePitch = (lpfErrorPitch - lpfErrorPitchOLD) / deltaT; // take derivative of lpf signal
