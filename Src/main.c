@@ -732,10 +732,11 @@ int main(void)
 		float pitchCmd = kp * errorPitch + kd * derivativePitch;
 		float yawCmd = kp * errorYaw; //kp + errorYaw;
 
-
-
-		if(NOW_MS < 10000)
+		if(NOW_MS < 13000)
 		{
+			//kp = 0.1;
+			//kd = 0.02;
+
 			thrustCmd = rollCmd = pitchCmd = yawCmd = 0.0;
 		}
 		else
