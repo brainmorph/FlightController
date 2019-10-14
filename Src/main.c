@@ -327,7 +327,7 @@ void configMPUFilter()
 	config = readMPUreg(0x1A);
 
 	config &= 0xF8;
-	config |= 0x0; // this is the value that goes into register
+	config |= 0x6; // this is the value that goes into register
 
 	writeMPUreg(0x1A, config);
 }
@@ -598,6 +598,11 @@ int main(void)
 //		HAL_UART_Transmit(&huart4, uartData, 100, 5);
 	}
 
+	float FR = 0;
+	float FL = 0;
+	float BR = 0;
+	float BL = 0;
+
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
 	{
 		// TODO: move these multipliers into 3 separate PID loops, one for each control axis
@@ -605,10 +610,10 @@ int main(void)
 		//roll *= 1.0;
 		yaw /= 4.0; // yaw needs to be cut back heavily
 
-		float FR = thrust + yaw + pitch - roll;
-		float FL = thrust - yaw + pitch + roll;
-		float BR = thrust - yaw - pitch - roll;
-		float BL = thrust + yaw - pitch + roll;
+		FR = thrust + yaw + pitch - roll;
+		FL = thrust - yaw + pitch + roll;
+		BR = thrust - yaw - pitch - roll;
+		BL = thrust + yaw - pitch + roll;
 
 		setPWM(FL, FR, BR, BL);
 	}
@@ -643,6 +648,9 @@ int main(void)
 	float calculatedRollAngle = 0.0;
 	float calculatedPitchAngle = 0.0;
 	float calculatedYawAngle = 0.0;
+	float rollCmd = 0;
+	float pitchCmd = 0;
+	float yawCmd = 0;
 
 	uint8_t uartData[150] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
 	uint32_t accelMagIgnoreCount = 0;
@@ -667,9 +675,9 @@ int main(void)
 
 	  	// x axis of gyro points straight out the front of quad
 	  	// y axis of gyro points to the left side of quad (as you look from behind)
-	  	float gyroRollDelta = 1.0 * wX * deltaT;
-	  	float gyroPitchDelta = 1.0 * wY * deltaT;
-	  	float gyroYawDelta = 1.0 * wZ * deltaT;
+	  	float gyroRollDelta = 0.5 * wX * deltaT;
+	  	float gyroPitchDelta = 0.5 * wY * deltaT;
+	  	float gyroYawDelta = 0.5 * wZ * deltaT;
 
 	  	calculatedRollAngle += gyroRollDelta;
 	  	calculatedPitchAngle += gyroPitchDelta;
@@ -694,8 +702,8 @@ int main(void)
 	  	}
 
 		// complementary filter the angle calculation
-	  	//calculatedRollAngle = 0.95 * calculatedRollAngle + 0.05 * accelRollAngle;
-	  	//calculatedPitchAngle = 0.95 * calculatedPitchAngle + 0.05 * accelPitchAngle;
+	  	calculatedRollAngle = 0.98 * calculatedRollAngle + 0.02 * accelRollAngle;
+	  	calculatedPitchAngle = 0.98 * calculatedPitchAngle + 0.02 * accelPitchAngle;
 
 
 		// calculate error terms
@@ -726,9 +734,9 @@ int main(void)
 		lpfErrorRollOLD = lpfErrorRoll; // done using lpfErrorRollOLD so time to update it
 		lpfErrorPitchOLD = lpfErrorPitch; // done using lpfErrorPitchOLD so time to update it
 
-		float rollCmd = kp * errorRoll + kd * derivativeRoll;
-		float pitchCmd = kp * errorPitch + kd * derivativePitch;
-		float yawCmd = kp * errorYaw; //kp + errorYaw;
+		rollCmd = kp * errorRoll + kd * derivativeRoll;
+		pitchCmd = kp * errorPitch + kd * derivativePitch;
+		yawCmd = kp * errorYaw; //kp + errorYaw;
 
 		if(NOW_MS < 13000)
 		{
@@ -742,8 +750,8 @@ int main(void)
 			//thrustCmd = 10;
 		}
 
-		if(calculatedRollAngle > 45 || calculatedRollAngle < -45 ||
-				calculatedPitchAngle > 45 || calculatedPitchAngle < -45)
+		if(calculatedRollAngle > 65 || calculatedRollAngle < -65 ||
+				calculatedPitchAngle > 65 || calculatedPitchAngle < -65)
 			thrustCmd = rollCmd = pitchCmd = yawCmd = 0; // safety check set
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
