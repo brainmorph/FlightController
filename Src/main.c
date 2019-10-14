@@ -640,6 +640,9 @@ int main(void)
 	float rollSet = 0.0;
 	float pitchSet = 0.0;
 	float yawSet = 0.0;
+	float calculatedRollAngle = 0.0;
+	float calculatedPitchAngle = 0.0;
+	float calculatedYawAngle = 0.0;
 
 	uint8_t uartData[150] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
 	uint32_t accelMagIgnoreCount = 0;
@@ -662,9 +665,15 @@ int main(void)
 	  	float wY = gY - envGyroY;
 	  	float wZ = gZ - envGyroZ;
 
-	  	gyroRollAngle += wX * deltaT;
-	  	gyroPitchAngle += wY * deltaT;
-	  	gyroYawAngle += wZ * deltaT;
+	  	float gyroRollDelta = wX * deltaT;
+	  	float gyroPitchDelta = wY * deltaT;
+	  	float gyroYawDelta = wZ * deltaT;
+
+	  	calculatedRollAngle += gyroRollDelta;
+	  	calculatedPitchAngle += gyroPitchDelta;
+	  	calculatedYawAngle += gyroYawDelta;
+
+
 
 	  	// calculate roll angle from acceleration
 		float accelRollAngle = -1.0 * atan2f(aY, aZ); // sign flip to align with accelerometer orientation
@@ -681,17 +690,10 @@ int main(void)
 			accelPitchAngle = 0;
 			accelMagIgnoreCount++;
 	  	}
-		// complementary roll angle calculation
-		float partialAccelRoll = 0.02 * accelRollAngle;
-		float partialGyroRoll = -0.98 * gyroRollAngle;
-		float calculatedRollAngle = partialAccelRoll + partialGyroRoll;
-		oldRollAngle = calculatedRollAngle;
 
-		// complementary pitch angle calculation
-		float partialAccelPitch = 0.02 * accelPitchAngle;
-		float partialGyroPitch = -0.98 * gyroPitchAngle;
-		float calculatedPitchAngle = partialAccelPitch + partialGyroPitch;
-		oldPitchAngle = calculatedPitchAngle;
+		// complementary filter the angle calculation
+	  	calculatedRollAngle = 0.98 * calculatedRollAngle + 0.02 * accelRollAngle;
+	  	calculatedPitchAngle = 0.98 * calculatedPitchAngle + 0.02 * accelPitchAngle;
 
 		// calculate yaw angle from gyro
 		float calculatedYawAngle = -1.0 * gyroYawAngle; // there is no complementary filtering for yaw
