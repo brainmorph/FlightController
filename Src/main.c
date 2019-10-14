@@ -667,9 +667,9 @@ int main(void)
 
 	  	// x axis of gyro points straight out the front of quad
 	  	// y axis of gyro points to the left side of quad (as you look from behind)
-	  	float gyroRollDelta = wX * deltaT;
-	  	float gyroPitchDelta = wY * deltaT;
-	  	float gyroYawDelta = wZ * deltaT;
+	  	float gyroRollDelta = 1.0 * wX * deltaT;
+	  	float gyroPitchDelta = 1.0 * wY * deltaT;
+	  	float gyroYawDelta = 1.0 * wZ * deltaT;
 
 	  	calculatedRollAngle += gyroRollDelta;
 	  	calculatedPitchAngle += gyroPitchDelta;
@@ -678,7 +678,7 @@ int main(void)
 
 
 	  	// calculate roll angle from acceleration
-		float accelRollAngle = -1.0 * atan2f(aY, aZ); // sign flip to align with accelerometer orientation
+		float accelRollAngle = atan2f(aY, aZ); // sign flip to align with accelerometer orientation
 		accelRollAngle *= (180.0 / 3.1415); // convert to degrees
 
 		//calculate pitch angle from acceleration
@@ -697,19 +697,11 @@ int main(void)
 	  	calculatedRollAngle = 0.95 * calculatedRollAngle + 0.05 * accelRollAngle;
 	  	calculatedPitchAngle = 0.95 * calculatedPitchAngle + 0.05 * accelPitchAngle;
 
-		// calculate yaw angle from gyro
-		float calculatedYawAngle = -1.0 * gyroYawAngle; // there is no complementary filtering for yaw
-
 
 		// calculate error terms
 		float errorRoll = rollSet - calculatedRollAngle; // my setpoint is 0
 		float errorPitch = pitchSet - calculatedPitchAngle; // my setpoint is 0
 		float errorYaw = yawSet - calculatedYawAngle; // setpoint is 0
-
-
-//		float rollCmd = kp * errorRoll;
-//		float pitchCmd = kp * errorPitch;
-//		float yawCmd = kp * errorYaw; //kp + errorYaw;
 
 
 		volatile int dummyStopHere;
