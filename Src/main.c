@@ -665,6 +665,8 @@ int main(void)
 	  	float wY = gY - envGyroY;
 	  	float wZ = gZ - envGyroZ;
 
+	  	// x axis of gyro points straight out the front of quad
+	  	// y axis of gyro points to the left side of quad (as you look from behind)
 	  	float gyroRollDelta = wX * deltaT;
 	  	float gyroPitchDelta = wY * deltaT;
 	  	float gyroYawDelta = wZ * deltaT;
@@ -692,8 +694,8 @@ int main(void)
 	  	}
 
 		// complementary filter the angle calculation
-	  	calculatedRollAngle = 0.98 * calculatedRollAngle + 0.02 * accelRollAngle;
-	  	calculatedPitchAngle = 0.98 * calculatedPitchAngle + 0.02 * accelPitchAngle;
+	  	calculatedRollAngle = 0.95 * calculatedRollAngle + 0.05 * accelRollAngle;
+	  	calculatedPitchAngle = 0.95 * calculatedPitchAngle + 0.05 * accelPitchAngle;
 
 		// calculate yaw angle from gyro
 		float calculatedYawAngle = -1.0 * gyroYawAngle; // there is no complementary filtering for yaw
@@ -716,14 +718,14 @@ int main(void)
 
 		// calculate derivative
 		if(lpfErrorRollOLD < errorRoll) // apply lpf directionally otherwise you get unbounded DC term
-			lpfErrorRoll += 0.002 * fabs(errorRoll); // lpf the error signal to prepare for derivative
+			lpfErrorRoll += 0.02 * fabs(errorRoll); // lpf the error signal to prepare for derivative
 		else
-			lpfErrorRoll -= 0.002 * fabs(errorRoll);
+			lpfErrorRoll -= 0.02 * fabs(errorRoll);
 
 		if(lpfErrorPitchOLD < errorPitch)
-			lpfErrorPitch += 0.002 * fabs(errorPitch); // lpf the error signal to prepare for derivative
+			lpfErrorPitch += 0.02 * fabs(errorPitch); // lpf the error signal to prepare for derivative
 		else
-			lpfErrorPitch -= 0.002 * fabs(errorPitch);
+			lpfErrorPitch -= 0.02 * fabs(errorPitch);
 
 		float derivativeRoll = (lpfErrorRoll - lpfErrorRollOLD) / deltaT; // take derivative of lpf signal
 		float derivativePitch = (lpfErrorPitch - lpfErrorPitchOLD) / deltaT; // take derivative of lpf signal
