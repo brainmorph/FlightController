@@ -718,14 +718,14 @@ int main(void)
 
 		// calculate derivative
 		if(lpfErrorRollOLD < errorRoll) // apply lpf directionally otherwise you get unbounded DC term
-			lpfErrorRoll += 0.02 * fabs(errorRoll); // lpf the error signal to prepare for derivative
+			lpfErrorRoll += 0.002 * fabs(errorRoll); // lpf the error signal to prepare for derivative
 		else
-			lpfErrorRoll -= 0.02 * fabs(errorRoll);
+			lpfErrorRoll -= 0.002 * fabs(errorRoll);
 
 		if(lpfErrorPitchOLD < errorPitch)
-			lpfErrorPitch += 0.02 * fabs(errorPitch); // lpf the error signal to prepare for derivative
+			lpfErrorPitch += 0.002 * fabs(errorPitch); // lpf the error signal to prepare for derivative
 		else
-			lpfErrorPitch -= 0.02 * fabs(errorPitch);
+			lpfErrorPitch -= 0.002 * fabs(errorPitch);
 
 		float derivativeRoll = (lpfErrorRoll - lpfErrorRollOLD) / deltaT; // take derivative of lpf signal
 		float derivativePitch = (lpfErrorPitch - lpfErrorPitchOLD) / deltaT; // take derivative of lpf signal
