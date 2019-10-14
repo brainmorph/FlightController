@@ -680,14 +680,14 @@ int main(void)
 			accelPitchAngle = 0;
 	  	}
 		// complementary roll angle calculation
-		float partialAccelRoll = 0.02 * accelRollAngle;
-		float partialGyroRoll = -0.98 * gyroRollAngle;
+		float partialAccelRoll = 0.1 * accelRollAngle;
+		float partialGyroRoll = -0.9 * gyroRollAngle;
 		float calculatedRollAngle = partialAccelRoll + partialGyroRoll;
 		oldRollAngle = calculatedRollAngle;
 
 		// complementary pitch angle calculation
-		float partialAccelPitch = 0.02 * accelPitchAngle;
-		float partialGyroPitch = -0.98 * gyroPitchAngle;
+		float partialAccelPitch = 0.1 * accelPitchAngle;
+		float partialGyroPitch = -0.9 * gyroPitchAngle;
 		float calculatedPitchAngle = partialAccelPitch + partialGyroPitch;
 		oldPitchAngle = calculatedPitchAngle;
 
