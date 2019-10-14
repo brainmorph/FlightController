@@ -605,10 +605,10 @@ int main(void)
 		//roll *= 1.0;
 		yaw /= 4.0; // yaw needs to be cut back heavily
 
-		float FR = thrust + yaw + pitch + roll;
-		float FL = thrust - yaw + pitch - roll;
-		float BR = thrust - yaw - pitch + roll;
-		float BL = thrust + yaw - pitch - roll;
+		float FR = thrust + yaw + pitch - roll;
+		float FL = thrust - yaw + pitch + roll;
+		float BR = thrust - yaw - pitch - roll;
+		float BL = thrust + yaw - pitch + roll;
 
 		setPWM(FL, FR, BR, BL);
 	}
@@ -694,8 +694,8 @@ int main(void)
 	  	}
 
 		// complementary filter the angle calculation
-	  	calculatedRollAngle = 0.95 * calculatedRollAngle + 0.05 * accelRollAngle;
-	  	calculatedPitchAngle = 0.95 * calculatedPitchAngle + 0.05 * accelPitchAngle;
+	  	//calculatedRollAngle = 0.95 * calculatedRollAngle + 0.05 * accelRollAngle;
+	  	//calculatedPitchAngle = 0.95 * calculatedPitchAngle + 0.05 * accelPitchAngle;
 
 
 		// calculate error terms
@@ -797,13 +797,13 @@ int main(void)
 		{
 			snprintf(uartTransmit, sizeof(uartTransmit), "roll:%f", rollSet);
 			HAL_UART_Transmit(&huart4, uartTransmit, 25, 5);
-			rollSet += 3;
+			rollSet -= 3;
 		}
 		if(uartReceive[0] == 'd')
 		{
 			snprintf(uartTransmit, sizeof(uartTransmit), "roll:%f", rollSet);
 			HAL_UART_Transmit(&huart4, uartTransmit, 25, 5);
-			rollSet -= 3;
+			rollSet += 3;
 		}
 		if(uartReceive[0] == 'q')
 		{
