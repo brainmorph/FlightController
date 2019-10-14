@@ -642,6 +642,7 @@ int main(void)
 	float yawSet = 0.0;
 
 	uint8_t uartData[150] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
+	uint32_t accelMagIgnoreCount = 0;
 	while (1)
 	{
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3); // scope this pin if you want to see main loop frequency
@@ -678,16 +679,17 @@ int main(void)
 	  	{
 			accelRollAngle = 0;
 			accelPitchAngle = 0;
+			accelMagIgnoreCount++;
 	  	}
 		// complementary roll angle calculation
-		float partialAccelRoll = 0.1 * accelRollAngle;
-		float partialGyroRoll = -0.9 * gyroRollAngle;
+		float partialAccelRoll = 0.02 * accelRollAngle;
+		float partialGyroRoll = -0.98 * gyroRollAngle;
 		float calculatedRollAngle = partialAccelRoll + partialGyroRoll;
 		oldRollAngle = calculatedRollAngle;
 
 		// complementary pitch angle calculation
-		float partialAccelPitch = 0.1 * accelPitchAngle;
-		float partialGyroPitch = -0.9 * gyroPitchAngle;
+		float partialAccelPitch = 0.02 * accelPitchAngle;
+		float partialGyroPitch = -0.98 * gyroPitchAngle;
 		float calculatedPitchAngle = partialAccelPitch + partialGyroPitch;
 		oldPitchAngle = calculatedPitchAngle;
 
@@ -712,14 +714,14 @@ int main(void)
 
 		// calculate derivative
 		if(lpfErrorRollOLD < errorRoll) // apply lpf directionally otherwise you get unbounded DC term
-			lpfErrorRoll += 0.01 * fabs(errorRoll); // lpf the error signal to prepare for derivative
+			lpfErrorRoll += 0.002 * fabs(errorRoll); // lpf the error signal to prepare for derivative
 		else
-			lpfErrorRoll -= 0.01 * fabs(errorRoll);
+			lpfErrorRoll -= 0.002 * fabs(errorRoll);
 
 		if(lpfErrorPitchOLD < errorPitch)
-			lpfErrorPitch += 0.01 * fabs(errorPitch); // lpf the error signal to prepare for derivative
+			lpfErrorPitch += 0.002 * fabs(errorPitch); // lpf the error signal to prepare for derivative
 		else
-			lpfErrorPitch -= 0.01 * fabs(errorPitch);
+			lpfErrorPitch -= 0.002 * fabs(errorPitch);
 
 		float derivativeRoll = (lpfErrorRoll - lpfErrorRollOLD) / deltaT; // take derivative of lpf signal
 		float derivativePitch = (lpfErrorPitch - lpfErrorPitchOLD) / deltaT; // take derivative of lpf signal
@@ -744,8 +746,8 @@ int main(void)
 			//thrustCmd = 10;
 		}
 
-		if(calculatedRollAngle > 90 || calculatedRollAngle < -90 ||
-				calculatedPitchAngle > 90 || calculatedPitchAngle < -90)
+		if(calculatedRollAngle > 45 || calculatedRollAngle < -45 ||
+				calculatedPitchAngle > 45 || calculatedPitchAngle < -45)
 			thrustCmd = rollCmd = pitchCmd = yawCmd = 0; // safety check set
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
@@ -758,6 +760,7 @@ int main(void)
 
 	  	// RX code----------------------------
 		uint8_t uartReceive[2] = {0};
+		uint8_t uartTransmit[25] = {0};
 		HAL_UART_Receive(&huart4, uartReceive, 1, 1);
 		if(uartReceive[0] == 'i')
 		{
@@ -796,12 +799,14 @@ int main(void)
 		}
 		if(uartReceive[0] == 'a')
 		{
-			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			snprintf(uartTransmit, sizeof(uartTransmit), "roll:%f", rollSet);
+			HAL_UART_Transmit(&huart4, uartTransmit, 25, 5);
 			rollSet += 3;
 		}
 		if(uartReceive[0] == 'd')
 		{
-			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
+			snprintf(uartTransmit, sizeof(uartTransmit), "roll:%f", rollSet);
+			HAL_UART_Transmit(&huart4, uartTransmit, 25, 5);
 			rollSet -= 3;
 		}
 		if(uartReceive[0] == 'q')
