@@ -626,6 +626,9 @@ int main(void)
 	float gyroRollAngle = 0;
 	float gyroPitchAngle = 0;
 	float gyroYawAngle = 0;
+	float errorRoll = 0;
+	float errorPitch = 0;
+	float errorYaw = 0;
 	float lpfErrorRoll = 0;
 	float lpfErrorPitch = 0;
 	float lpfErrorRollOLD = 0;
@@ -707,21 +710,23 @@ int main(void)
 
 
 		// calculate error terms
-		float errorRoll = rollSet - calculatedRollAngle; // my setpoint is 0
-		float errorPitch = pitchSet - calculatedPitchAngle; // my setpoint is 0
-		float errorYaw = yawSet - calculatedYawAngle; // setpoint is 0
+		errorRoll = rollSet - calculatedRollAngle; // my setpoint is 0
+		errorPitch = pitchSet - calculatedPitchAngle; // my setpoint is 0
+		errorYaw = yawSet - calculatedYawAngle; // setpoint is 0
 
 
 		// calculate derivative
-		if(lpfErrorRollOLD < errorRoll) // apply lpf directionally otherwise you get unbounded DC term
-			lpfErrorRoll += 0.01 * fabs(errorRoll); // lpf the error signal to prepare for derivative
-		else
-			lpfErrorRoll -= 0.01 * fabs(errorRoll);
-
-		if(lpfErrorPitchOLD < errorPitch)
-			lpfErrorPitch += 0.01 * fabs(errorPitch); // lpf the error signal to prepare for derivative
-		else
-			lpfErrorPitch -= 0.01 * fabs(errorPitch);
+//		if(lpfErrorRollOLD < errorRoll) // apply lpf directionally otherwise you get unbounded DC term
+//			lpfErrorRoll += 0.01 * fabs(errorRoll); // lpf the error signal to prepare for derivative
+//		else
+//			lpfErrorRoll -= 0.01 * fabs(errorRoll);
+//
+//		if(lpfErrorPitchOLD < errorPitch)
+//			lpfErrorPitch += 0.01 * fabs(errorPitch); // lpf the error signal to prepare for derivative
+//		else
+//			lpfErrorPitch -= 0.01 * fabs(errorPitch);
+		lpfErrorRoll = lpfErrorRoll + 0.1 * (errorRoll - lpfErrorRoll);
+		lpfErrorPitch = lpfErrorPitch + 0.1 * (errorPitch - lpfErrorPitch);
 
 		float derivativeRoll = (lpfErrorRoll - lpfErrorRollOLD) / deltaT; // take derivative of lpf signal
 		float derivativePitch = (lpfErrorPitch - lpfErrorPitchOLD) / deltaT; // take derivative of lpf signal
