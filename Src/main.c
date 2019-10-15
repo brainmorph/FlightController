@@ -327,7 +327,7 @@ void configMPUFilter()
 	config = readMPUreg(0x1A);
 
 	config &= 0xF8;
-	config |= 0x6; // this is the value that goes into register
+	config |= 0x5; // this is the value that goes into register
 
 	writeMPUreg(0x1A, config);
 }
@@ -675,9 +675,9 @@ int main(void)
 
 	  	// x axis of gyro points straight out the front of quad
 	  	// y axis of gyro points to the left side of quad (as you look from behind)
-	  	float gyroRollDelta = 0.5 * wX * deltaT;
-	  	float gyroPitchDelta = 0.5 * wY * deltaT;
-	  	float gyroYawDelta = 0.5 * wZ * deltaT;
+	  	float gyroRollDelta = 0.7 * wX * deltaT;
+	  	float gyroPitchDelta = 0.7 * wY * deltaT;
+	  	float gyroYawDelta = 0.7 * wZ * deltaT;
 
 	  	calculatedRollAngle += gyroRollDelta;
 	  	calculatedPitchAngle += gyroPitchDelta;
@@ -712,20 +712,16 @@ int main(void)
 		float errorYaw = yawSet - calculatedYawAngle; // setpoint is 0
 
 
-		volatile int dummyStopHere;
-		if(calculatedRollAngle > 45)
-			dummyStopHere = 0;
-
 		// calculate derivative
 		if(lpfErrorRollOLD < errorRoll) // apply lpf directionally otherwise you get unbounded DC term
-			lpfErrorRoll += 0.002 * fabs(errorRoll); // lpf the error signal to prepare for derivative
+			lpfErrorRoll += 0.01 * fabs(errorRoll); // lpf the error signal to prepare for derivative
 		else
-			lpfErrorRoll -= 0.002 * fabs(errorRoll);
+			lpfErrorRoll -= 0.01 * fabs(errorRoll);
 
 		if(lpfErrorPitchOLD < errorPitch)
-			lpfErrorPitch += 0.002 * fabs(errorPitch); // lpf the error signal to prepare for derivative
+			lpfErrorPitch += 0.01 * fabs(errorPitch); // lpf the error signal to prepare for derivative
 		else
-			lpfErrorPitch -= 0.002 * fabs(errorPitch);
+			lpfErrorPitch -= 0.01 * fabs(errorPitch);
 
 		float derivativeRoll = (lpfErrorRoll - lpfErrorRollOLD) / deltaT; // take derivative of lpf signal
 		float derivativePitch = (lpfErrorPitch - lpfErrorPitchOLD) / deltaT; // take derivative of lpf signal
