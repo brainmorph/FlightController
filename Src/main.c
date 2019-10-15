@@ -610,10 +610,10 @@ int main(void)
 		//roll *= 1.0;
 		yaw /= 4.0; // yaw needs to be cut back heavily
 
-		FR = thrust + yaw + pitch - roll;
-		FL = thrust - yaw + pitch + roll;
-		BR = thrust - yaw - pitch - roll;
-		BL = thrust + yaw - pitch + roll;
+		FR = thrust - yaw + pitch - roll;
+		FL = thrust + yaw + pitch + roll;
+		BR = thrust + yaw - pitch - roll;
+		BL = thrust - yaw - pitch + roll;
 
 		setPWM(FL, FR, BR, BL);
 	}
