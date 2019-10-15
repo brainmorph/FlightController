@@ -824,13 +824,16 @@ int main(void)
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 			yawSet += 3;
 		}
-		if(uartReceive[0] == '0')
+		if(uartReceive[0] == '0') // emergency shutoff.  reset all values
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 			thrustCmd = 0;
 			rollSet = 0;
 			pitchSet = 0;
 			yawSet = 0;
+			calculatedRollAngle = 0;
+			calculatedPitchAngle = 0;
+			calculatedYawAngle = 0;
 			kp = 0;
 			kd = 0;
 		}
