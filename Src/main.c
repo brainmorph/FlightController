@@ -678,9 +678,9 @@ int main(void)
 
 	  	// x axis of gyro points straight out the front of quad
 	  	// y axis of gyro points to the left side of quad (as you look from behind)
-	  	float gyroRollDelta = 0.7 * wX * deltaT;
-	  	float gyroPitchDelta = 0.7 * wY * deltaT;
-	  	float gyroYawDelta = 0.7 * wZ * deltaT;
+	  	float gyroRollDelta = 1.0 * wX * deltaT;
+	  	float gyroPitchDelta = 1.0 * wY * deltaT;
+	  	float gyroYawDelta = 1.0 * wZ * deltaT;
 
 	  	calculatedRollAngle += gyroRollDelta;
 	  	calculatedPitchAngle += gyroPitchDelta;
@@ -693,7 +693,7 @@ int main(void)
 		accelRollAngle *= (180.0 / 3.1415); // convert to degrees
 
 		//calculate pitch angle from acceleration
-		float accelPitchAngle = atan2f(aX, aZ);
+		float accelPitchAngle = atan2f(-1.0*aX, aZ);
 		accelPitchAngle *= (180.0 / 3.1415); // convert to degrees
 
 	  	float accelMag = fabs(aX) + fabs(aY) + fabs(aZ);
@@ -728,9 +728,9 @@ int main(void)
 
 		rollCmd = kp * errorRoll + kd * derivativeRoll;
 		pitchCmd = kp * errorPitch + kd * derivativePitch;
-		yawCmd = kp * errorYaw; //kp + errorYaw;
+		yawCmd = kp * errorYaw; // + kd * derivativeYaw;
 
-		if(NOW_MS < 13000)
+		if(NOW_MS < 10000)
 		{
 			//kp = 0.1;
 			//kd = 0.02;
