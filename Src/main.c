@@ -610,10 +610,10 @@ int main(void)
 		//roll *= 1.0;
 		yaw /= 8.0; // yaw needs to be cut back heavily
 
-		FR = thrust - yaw + pitch - roll;
-		FL = thrust + yaw + pitch + roll;
-		BR = thrust + yaw - pitch - roll;
-		BL = thrust - yaw - pitch + roll;
+		FR = thrust - yaw - pitch - roll;
+		FL = thrust + yaw - pitch + roll;
+		BR = thrust + yaw + pitch - roll;
+		BL = thrust - yaw + pitch + roll;
 
 		setPWM(FL, FR, BR, BL);
 	}
@@ -785,13 +785,13 @@ int main(void)
 		if(uartReceive[0] == 'w')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			pitchSet -= 3;
+			pitchSet += 3;
 
 		}
 		if(uartReceive[0] == 's')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			pitchSet += 3;
+			pitchSet -= 3;
 		}
 		if(uartReceive[0] == 'a')
 		{
