@@ -327,7 +327,7 @@ void configMPUFilter()
 	config = readMPUreg(0x1A);
 
 	config &= 0xF8;
-	config |= 0x5; // this is the value that goes into register
+	config |= 0x0; // this is the value that goes into register
 
 	writeMPUreg(0x1A, config);
 }
@@ -606,9 +606,9 @@ int main(void)
 	void mixPWM(float thrust, float roll, float pitch, float yaw)
 	{
 		// TODO: move these multipliers into 3 separate PID loops, one for each control axis
-		pitch *= 2.0; // make pitch a little bit stronger than roll since the battery packs lie on this axis
+		pitch *= 1.1; // make pitch a little bit stronger than roll since the battery packs lie on this axis
 		//roll *= 1.0;
-		yaw /= 8.0; // yaw needs to be cut back heavily
+		yaw /= 2.0; // yaw needs to be cut back heavily
 
 		FR = thrust - yaw - pitch - roll;
 		FL = thrust + yaw - pitch + roll;
@@ -705,8 +705,8 @@ int main(void)
 	  	}
 
 		// complementary filter the angle calculation
-	  	calculatedRollAngle = 0.98 * calculatedRollAngle + 0.02 * accelRollAngle;
-	  	calculatedPitchAngle = 0.98 * calculatedPitchAngle + 0.02 * accelPitchAngle;
+	  	calculatedRollAngle = 0.995 * calculatedRollAngle + 0.005 * accelRollAngle;
+	  	calculatedPitchAngle = 0.995 * calculatedPitchAngle + 0.005 * accelPitchAngle;
 
 
 		// calculate error terms
@@ -728,7 +728,7 @@ int main(void)
 
 		rollCmd = kp * errorRoll + kd * derivativeRoll;
 		pitchCmd = kp * errorPitch + kd * derivativePitch;
-		yawCmd = kp * errorYaw; // + kd * derivativeYaw;
+		yawCmd = 0; //kp * errorYaw; // + kd * derivativeYaw;
 
 		if(NOW_MS < 10000)
 		{
