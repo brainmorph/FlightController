@@ -687,6 +687,9 @@ int main(void)
 	  	calculatedYawAngle += gyroYawDelta;
 
 
+	  	calculatedPitchAngle -= calculatedRollAngle * sin(gyroYawDelta * (3.14/180.0));               //If the IMU has yawed transfer the roll angle to the pitch angel
+	  	calculatedRollAngle += calculatedPitchAngle * sin(gyroYawDelta * (3.14/180.0));               //If the IMU has yawed transfer the pitch angle to the roll angel
+
 
 	  	// calculate roll angle from acceleration
 		float accelRollAngle = atan2f(aY, aZ); // sign flip to align with accelerometer orientation
@@ -705,8 +708,8 @@ int main(void)
 	  	}
 
 		// complementary filter the angle calculation
-	  	calculatedRollAngle = 0.995 * calculatedRollAngle + 0.005 * accelRollAngle;
-	  	calculatedPitchAngle = 0.995 * calculatedPitchAngle + 0.005 * accelPitchAngle;
+	  	calculatedRollAngle = 0.9995 * calculatedRollAngle + 0.0005 * accelRollAngle;
+	  	calculatedPitchAngle = 0.9995 * calculatedPitchAngle + 0.0005 * accelPitchAngle;
 
 
 		// calculate error terms
@@ -728,7 +731,7 @@ int main(void)
 
 		rollCmd = kp * errorRoll + kd * derivativeRoll;
 		pitchCmd = kp * errorPitch + kd * derivativePitch;
-		yawCmd = 0; //kp * errorYaw; // + kd * derivativeYaw;
+		yawCmd = kp * errorYaw + kd * derivativeYaw;
 
 		if(NOW_MS < 10000)
 		{
