@@ -608,7 +608,7 @@ int main(void)
 		// TODO: move these multipliers into 3 separate PID loops, one for each control axis
 		pitch *= 1.1; // make pitch a little bit stronger than roll since the battery packs lie on this axis
 		//roll *= 1.0;
-		yaw /= 2.0; // yaw needs to be cut back heavily
+		yaw /= 32.0; // yaw needs to be cut back heavily
 
 		FR = thrust - yaw - pitch - roll;
 		FL = thrust + yaw - pitch + roll;
@@ -654,6 +654,9 @@ int main(void)
 	float rollCmd = 0;
 	float pitchCmd = 0;
 	float yawCmd = 0;
+	float lpfAx = 0;
+	float lpfAy = 0;
+	float lpfAz = 0;
 
 	uint8_t uartData[150] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
 	uint32_t accelMagIgnoreCount = 0;
@@ -672,6 +675,11 @@ int main(void)
 	  	readCurrentAccelerationValues(&aX, &aY, &aZ);
 	  	readCurrentGyroValues(&gX, &gY, &gZ);
 
+	  	// average out acceleration but not gyro
+	  	lpfAx = 0.98 * aX + 0.02 * lpfAx;
+	  	lpfAy = 0.98 * aY + 0.02 * lpfAy;
+	  	lpfAz = 0.98 * aZ + 0.02 * lpfAz;
+
 	  	float wX = gX - envGyroX;
 	  	float wY = gY - envGyroY;
 	  	float wZ = gZ - envGyroZ;
@@ -687,19 +695,19 @@ int main(void)
 	  	calculatedYawAngle += gyroYawDelta;
 
 
-	  	calculatedPitchAngle -= calculatedRollAngle * sin(gyroYawDelta * (3.14/180.0));               //If the IMU has yawed transfer the roll angle to the pitch angel
+	  	calculatedPitchAngle += calculatedRollAngle * sin(gyroYawDelta * (-3.14/180.0));               //If the IMU has yawed transfer the roll angle to the pitch angel
 	  	calculatedRollAngle += calculatedPitchAngle * sin(gyroYawDelta * (3.14/180.0));               //If the IMU has yawed transfer the pitch angle to the roll angel
 
 
 	  	// calculate roll angle from acceleration
-		float accelRollAngle = atan2f(aY, aZ); // sign flip to align with accelerometer orientation
+		float accelRollAngle = atan2f(lpfAy, lpfAz); // sign flip to align with accelerometer orientation
 		accelRollAngle *= (180.0 / 3.1415); // convert to degrees
 
 		//calculate pitch angle from acceleration
-		float accelPitchAngle = atan2f(-1.0*aX, aZ);
+		float accelPitchAngle = atan2f(-1.0*lpfAx, lpfAz);
 		accelPitchAngle *= (180.0 / 3.1415); // convert to degrees
 
-	  	float accelMag = fabs(aX) + fabs(aY) + fabs(aZ);
+	  	float accelMag = fabs(lpfAx) + fabs(lpfAy) + fabs(lpfAz);
 	  	if(accelMag < 4.9 || accelMag > 19.6) // if acceleration is crazy, ignore calculating angles from it
 	  	{
 			accelRollAngle = 0;
