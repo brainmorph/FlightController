@@ -523,13 +523,13 @@ int main(void)
 	{
 
 		// clip min/max motor output
-		if(motor1 < 0)
+		if(motor1 < 5)
 			motor1 = 0;
-		if(motor2 < 0)
+		if(motor2 < 5)
 			motor2 = 0;
-		if(motor3 < 0)
+		if(motor3 < 5)
 			motor3 = 0;
-		if(motor4 < 0)
+		if(motor4 < 5)
 			motor4 = 0;
 
 		float motorMax = 60;
@@ -608,7 +608,7 @@ int main(void)
 		// TODO: move these multipliers into 3 separate PID loops, one for each control axis
 		pitch *= 1.1; // make pitch a little bit stronger than roll since the battery packs lie on this axis
 		//roll *= 1.0;
-		yaw /= 32.0; // yaw needs to be cut back heavily
+		yaw /= 8.0; // yaw needs to be cut back heavily
 
 		FR = thrust - yaw - pitch - roll;
 		FL = thrust + yaw - pitch + roll;
@@ -676,9 +676,9 @@ int main(void)
 	  	readCurrentGyroValues(&gX, &gY, &gZ);
 
 	  	// average out acceleration but not gyro
-	  	lpfAx = 0.98 * aX + 0.02 * lpfAx;
-	  	lpfAy = 0.98 * aY + 0.02 * lpfAy;
-	  	lpfAz = 0.98 * aZ + 0.02 * lpfAz;
+	  	lpfAx = 0.5 * aX + 0.5 * lpfAx;
+	  	lpfAy = 0.5 * aY + 0.5 * lpfAy;
+	  	lpfAz = 0.5 * aZ + 0.5 * lpfAz;
 
 	  	float wX = gX - envGyroX;
 	  	float wY = gY - envGyroY;
@@ -842,12 +842,12 @@ int main(void)
 		if(uartReceive[0] == '1')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			thrustCmd += 3;
+			thrustCmd += 1;
 		}
 		if(uartReceive[0] == '2')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			thrustCmd -= 7;
+			thrustCmd -= 4;
 		}
 		if(uartReceive[0] == '5')
 		{
