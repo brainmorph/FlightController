@@ -826,7 +826,7 @@ int main(void)
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 			yawSet += 3;
 		}
-		if(uartReceive[0] == '0') // emergency shutoff.  reset all values
+		if(uartReceive[0] == '0' || uartReceive[0] == '`') // emergency shutoff.  reset all values
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 			thrustCmd = 0;
@@ -847,32 +847,12 @@ int main(void)
 		if(uartReceive[0] == '2')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			thrustCmd -= 4;
+			thrustCmd -= 3;
 		}
 		if(uartReceive[0] == '5')
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 			thrustCmd = 0;
-		}
-		if(uartReceive[0] == '6')
-		{
-			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			thrustCmd = 15;
-		}
-		if(uartReceive[0] == '7')
-		{
-			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			thrustCmd = 25;
-		}
-		if(uartReceive[0] == '8')
-		{
-			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			thrustCmd = 30;
-		}
-		if(uartReceive[0] == '9')
-		{
-			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
-			thrustCmd = 35;
 		}
 
 		// RX code end------------------------------------
