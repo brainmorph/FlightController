@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "circularbuffer.h"
 #include "math.h"
+#include "morph_stopwatch.h"
 
 /* USER CODE END Includes */
 
@@ -363,8 +364,6 @@ float pwm(float value)
 	return value * slope; // RPM * slope
 }
 
-uint32_t NOW_MS = 0;
-
 
 //TODO: CLEAN UPVVVVVVVVVVVVVVVVVVVVVVVVVVV
 #define start_timer()    *((volatile uint32_t*)0xE0001000) = 0x40000001  // Enable CYCCNT register
@@ -660,8 +659,32 @@ int main(void)
 
 	uint8_t uartData[150] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
 	uint32_t accelMagIgnoreCount = 0;
+	morph_stopwatch rxWatchdogStopwatch;
+	morphStopWatch_start(rxWatchdogStopwatch);
+
+	uint8_t rxWatchdogFlag = 1;
 	while (1)
 	{
+		// -- FAILSAFE --
+		if(morphStopWatch_ms(rxWatchdogStopwatch) > 333) // check receiver signal 3 times a second
+		{
+			//rxWatchdogFlag = 1; // DISABLE FAIL SAFE FOR NOW
+
+			//check flag is good
+			if(rxWatchdogFlag != 1)
+			{
+				while(1) // emergency shut-off
+				{
+					thrustCmd = rollCmd = pitchCmd = yawCmd = 0;
+					mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
+				}
+			}
+
+			//clear flag after each check
+			rxWatchdogFlag = 0;
+		}
+		// -- FAILSAFE --
+
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3); // scope this pin if you want to see main loop frequency
 
 	  	deltaT = (NOW_MS - PREVIOUS_MS)/1000.0;
@@ -747,6 +770,7 @@ int main(void)
 			//kd = 0.02;
 
 			thrustCmd = rollCmd = pitchCmd = yawCmd = 0.0;
+			rxWatchdogFlag = 1;
 		}
 		else
 		{
@@ -853,6 +877,11 @@ int main(void)
 		{
 			HAL_UART_Transmit(&huart4, uartReceive, 1, 5);
 			thrustCmd = 0;
+		}
+
+		if(uartReceive[0] == '$')
+		{
+			rxWatchdogFlag = 1;
 		}
 
 		// RX code end------------------------------------
