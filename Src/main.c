@@ -659,16 +659,16 @@ int main(void)
 
 	uint8_t uartData[150] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
 	uint32_t accelMagIgnoreCount = 0;
-	morph_stopwatch rxWatchdogStopwatch;
-	morphStopWatch_start(rxWatchdogStopwatch);
+	morph_stopwatch rxStopwatch;
+	morphStopWatch_start(&rxStopwatch);
 
 	uint8_t rxWatchdogFlag = 1;
 	while (1)
 	{
 		// -- FAILSAFE --
-		if(morphStopWatch_ms(rxWatchdogStopwatch) > 333) // check receiver signal 3 times a second
+		if(morphStopWatch_ms(&rxStopwatch) > 1333) // check receiver signal every xxx milliseconds
 		{
-			//rxWatchdogFlag = 1; // DISABLE FAIL SAFE FOR NOW
+			morphStopWatch_start(&rxStopwatch); // restart stopwatch
 
 			//check flag is good
 			if(rxWatchdogFlag != 1)

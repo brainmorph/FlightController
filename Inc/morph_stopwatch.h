@@ -15,18 +15,16 @@ uint32_t NOW_MS = 0;
 typedef struct morph_stopwatch
 {
 	uint32_t EPOCH;
-	uint32_t CURRENT_MS;
 }morph_stopwatch;
 
-void morphStopWatch_start(morph_stopwatch s) // restarts the stopwatch if already started
+void morphStopWatch_start(morph_stopwatch *s) // restarts the stopwatch if already started
 {
-	s.EPOCH = NOW_MS;
-	s.CURRENT_MS = 0;
+	(*s).EPOCH = NOW_MS;
 }
 
-uint32_t morphStopWatch_ms(morph_stopwatch id) // returns time since specified stop-watch started (in milliseconds)
+uint32_t morphStopWatch_ms(morph_stopwatch *s) // returns time since specified stop-watch started (in milliseconds)
 {
-	return NOW_MS - id.EPOCH;
+	return NOW_MS - (*s).EPOCH;
 }
 
 #endif /* MORPH_STOPWATCH_H_ */
