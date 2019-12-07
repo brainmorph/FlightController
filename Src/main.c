@@ -88,7 +88,15 @@ static void MX_UART4_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint8_t readMPUreg(uint8_t reg)
+
+/*
+ * Read specified register from MPU6050 module.
+ *
+ * Input: register address
+ *
+ * Output: return 8bit register value
+ */
+uint8_t readMPUreg(uint8_t reg) // TODO: move to separate module
 {
 	uint16_t deviceAddress = 0x68;
 	uint16_t shiftedAddress = deviceAddress << 1;
@@ -102,7 +110,13 @@ uint8_t readMPUreg(uint8_t reg)
 	status = HAL_I2C_Master_Receive(&hi2c1, shiftedAddress, &value, 1, 1000); //read from register
 	return value;
 }
-void writeMPUreg(uint8_t reg, uint8_t value)
+
+/*
+ * Write value to specified register
+ *
+ * Input: register address, value to write
+ */
+void writeMPUreg(uint8_t reg, uint8_t value) // TODO: move to separate module
 {
 	uint16_t deviceAddress = 0x68;
 	uint16_t shiftedAddress = deviceAddress << 1;
