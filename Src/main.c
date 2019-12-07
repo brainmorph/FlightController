@@ -23,9 +23,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "circularbuffer.h"
 #include "math.h"
 #include "morph_stopwatch.h"
+#include "circularbuffer.h"
+
 
 /* USER CODE END Includes */
 
@@ -95,6 +96,8 @@ uint8_t readMPUreg(uint8_t reg)
 	pData[0] = reg; //register in question
 	uint16_t Size = 1;
 	HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, shiftedAddress, pData, Size, 1000); //select register
+	//if(status != HAL_OK) // TODO: log error
+
 	uint8_t value = 0;
 	status = HAL_I2C_Master_Receive(&hi2c1, shiftedAddress, &value, 1, 1000); //read from register
 	return value;
@@ -108,47 +111,6 @@ void writeMPUreg(uint8_t reg, uint8_t value)
 	pData[1] = value; //value to write
 	uint16_t Size = 2; //we need to send 2 bytes of data (check out mpu datasheet... write register operation is defined this way)
 	HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, shiftedAddress, pData, Size, 1000); //select register and write to it all in one
-}
-
-uint16_t cbDataLength(tCircularBuffer* cb)
-{
-	int32_t length = cb->write - cb->read;
-	if(length > 0)
-		return length;
-
-	//otherwise
-	length = cb->write + (length - cb->read);
-	return length;
-}
-
-void cbBumpNewDataIn(tCircularBuffer* cb, float val)
-{
-	cb->read = (cb->read + 1) & (cb->size - 1);
-	cb->buf[cb->write] = val;
-	cb->write = (cb->write + 1) & (cb->size -1);
-}
-
-int cbWrite(tCircularBuffer* cb, float data)
-{
-	if(cbDataLength(cb) == (cb->size - 1))
-	{
-		//return -1; //buffer full
-		cbBumpNewDataIn(cb, data);
-	}
-
-	//otherwise insert new data
-	cb->buf[cb->write] = data;
-	cb->write = (cb->write + 1) & (cb->size - 1); //this is possible because size is a power of 2
-}
-
-int cbRead(tCircularBuffer* cb, float* data)
-{
-	if(cbDataLength(cb) == 0)
-		return -1; //empty buffer
-
-	//otherwise return oldest data
-	*data = cb->buf[cb->read];
-	cb->read = (cb->read + 1) & (cb->size - 1); //this is possible because size is a power of 2
 }
 
 #define accelRunningLen 4 // must be a power of 2
@@ -491,29 +453,29 @@ int main(void)
 
 	void dumbFunction(void)
 	{
-	counter++;
-	if(counter < 0)
-	  counter = 0;
-	if(counter2 < 20 || counter2 > 38)
-	  counter2 = 20;
+		counter++;
+		if(counter < 0)
+		  counter = 0;
+		if(counter2 < 20 || counter2 > 38)
+		  counter2 = 20;
 
-	it2 = get_timer();    // Derive the cycle-count difference
-	it1 = it2 - it1;
+		it2 = get_timer();    // Derive the cycle-count difference
+		it1 = it2 - it1;
 
-	//HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
+		//HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
 
-	if(counter % 10 != 0) // slow this loop down
-	  return;
+		if(counter % 10 != 0) // slow this loop down
+		  return;
 
-	counter2++;
+		counter2++;
 
-	//Just set the register directly
-	htim4.Instance->CCR1 = counter2;
-	htim4.Instance->CCR2 = counter2;
-	htim4.Instance->CCR3 = counter2;
-	htim4.Instance->CCR4 = counter2;
+		//Just set the register directly
+		htim4.Instance->CCR1 = counter2;
+		htim4.Instance->CCR2 = counter2;
+		htim4.Instance->CCR3 = counter2;
+		htim4.Instance->CCR4 = counter2;
 
-	it1 = it2;
+		it1 = it2;
 	}
 
 	// each setting represents motor throttle from 0 to 100%
@@ -666,7 +628,7 @@ int main(void)
 	while (1)
 	{
 		// -- FAILSAFE --
-		if(morphStopWatch_ms(&rxStopwatch) > 1333) // check receiver signal every xxx milliseconds
+		if(morphStopWatch_ms(&rxStopwatch) > 666) // check receiver signal every xxx milliseconds
 		{
 			morphStopWatch_start(&rxStopwatch); // restart stopwatch
 
