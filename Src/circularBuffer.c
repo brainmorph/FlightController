@@ -65,7 +65,11 @@ int cbWrite(tCircularBuffer* cb, float data, uint8_t force)
 }
 
 /*
+ *	Read element from circular buffer and appropriately advance the data pointers
  *
+ *	Input: circular buffer, data to write
+ *
+ *	Output: -1 if buffer is empty, 0 otherwise
  */
 int cbRead(tCircularBuffer* cb, float* data)
 {
@@ -75,4 +79,6 @@ int cbRead(tCircularBuffer* cb, float* data)
 	//otherwise return oldest data
 	*data = cb->buf[cb->read];
 	cb->read = (cb->read + 1) & (cb->size - 1); //this is possible because size is a power of 2
+
+	return 0;
 }
