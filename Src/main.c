@@ -20,12 +20,14 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "circularbuffer.h"
 #include "math.h"
 #include "morph_stopwatch.h"
+#include "circularbuffer.h"
+
 
 /* USER CODE END Includes */
 
@@ -87,7 +89,15 @@ static void MX_UART4_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint8_t readMPUreg(uint8_t reg)
+
+/*
+ * Read specified register from MPU6050 module.
+ *
+ * Input: register address
+ *
+ * Output: return 8bit register value
+ */
+uint8_t readMPUreg(uint8_t reg) // TODO: move to separate module
 {
 	uint16_t deviceAddress = 0x68;
 	uint16_t shiftedAddress = deviceAddress << 1;
@@ -95,11 +105,22 @@ uint8_t readMPUreg(uint8_t reg)
 	pData[0] = reg; //register in question
 	uint16_t Size = 1;
 	HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, shiftedAddress, pData, Size, 1000); //select register
+	if(status != HAL_OK)
+	{
+		// TODO: log error
+	}
+
 	uint8_t value = 0;
 	status = HAL_I2C_Master_Receive(&hi2c1, shiftedAddress, &value, 1, 1000); //read from register
 	return value;
 }
-void writeMPUreg(uint8_t reg, uint8_t value)
+
+/*
+ * Write value to specified register
+ *
+ * Input: register address, value to write
+ */
+void writeMPUreg(uint8_t reg, uint8_t value) // TODO: move to separate module
 {
 	uint16_t deviceAddress = 0x68;
 	uint16_t shiftedAddress = deviceAddress << 1;
@@ -108,47 +129,10 @@ void writeMPUreg(uint8_t reg, uint8_t value)
 	pData[1] = value; //value to write
 	uint16_t Size = 2; //we need to send 2 bytes of data (check out mpu datasheet... write register operation is defined this way)
 	HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, shiftedAddress, pData, Size, 1000); //select register and write to it all in one
-}
-
-uint16_t cbDataLength(tCircularBuffer* cb)
-{
-	int32_t length = cb->write - cb->read;
-	if(length > 0)
-		return length;
-
-	//otherwise
-	length = cb->write + (length - cb->read);
-	return length;
-}
-
-void cbBumpNewDataIn(tCircularBuffer* cb, float val)
-{
-	cb->read = (cb->read + 1) & (cb->size - 1);
-	cb->buf[cb->write] = val;
-	cb->write = (cb->write + 1) & (cb->size -1);
-}
-
-int cbWrite(tCircularBuffer* cb, float data)
-{
-	if(cbDataLength(cb) == (cb->size - 1))
+	if(status != HAL_OK)
 	{
-		//return -1; //buffer full
-		cbBumpNewDataIn(cb, data);
+		// TODO: log error
 	}
-
-	//otherwise insert new data
-	cb->buf[cb->write] = data;
-	cb->write = (cb->write + 1) & (cb->size - 1); //this is possible because size is a power of 2
-}
-
-int cbRead(tCircularBuffer* cb, float* data)
-{
-	if(cbDataLength(cb) == 0)
-		return -1; //empty buffer
-
-	//otherwise return oldest data
-	*data = cb->buf[cb->read];
-	cb->read = (cb->read + 1) & (cb->size - 1); //this is possible because size is a power of 2
 }
 
 #define accelRunningLen 4 // must be a power of 2
@@ -373,6 +357,26 @@ uint32_t it1, it2;      // start and stop flag
 //stop_timer();               // If timer is not needed any more, stop
 
 //TODO: CLEAN UP^^^^^^^^^^^^^^^
+
+void InitMPU()
+{
+	//read a register over I2C
+	readMPUreg(0x75);
+	readMPUreg(0x6B);
+	writeMPUreg(0x6B, 0x00); // wake the IMU
+	readMPUreg(0x6B);
+	readMPUreg(0x6B);
+
+	readMPUreg(0x1C); // read accel config register
+	writeMPUreg(0x1C, 0x10); // configure fullscale for +-8 g
+	readMPUreg(0x1C); // confirm
+
+	readMPUreg(0x1B); // read gyro config register
+	writeMPUreg(0x1B, 0x08); // configure fullscale for +- 500 degress/s
+	readMPUreg(0x1B); // confirm
+
+	configMPUFilter(); // apply filtering to IMU readings
+}
 /* USER CODE END 0 */
 
 /**
@@ -421,27 +425,12 @@ int main(void)
 
 	HAL_Delay(500); // TODO: is this necessary?
 
-	//let's try to read a register over I2C
-	readMPUreg(0x75);
-	readMPUreg(0x6B);
-	writeMPUreg(0x6B, 0x00); // wake the IMU
-	readMPUreg(0x6B);
-	readMPUreg(0x6B);
-
-	readMPUreg(0x1C); // read accel config register
-	writeMPUreg(0x1C, 0x10); // configure fullscale for +-8 g
-	readMPUreg(0x1C); // confirm
-
-	readMPUreg(0x1B); // read gyro config register
-	writeMPUreg(0x1B, 0x08); // configure fullscale for +- 500 degress/s
-	readMPUreg(0x1B); // confirm
-
-	configMPUFilter(); // apply filtering to IMU readings
+	InitMPU();
 
 	uint32_t count=0;
 	float accelX=0, accelY=0, accelZ=0, gyroX=0, gyroY=0, gyroZ=0;
-	float vX=0, vY=0, vZ=0;
-	float aRoll=0, aPitch=0, aYaw=0; // angles with respect to each axis
+	//float vX=0, vY=0, vZ=0;
+	//float aRoll=0, aPitch=0, aYaw=0; // angles with respect to each axis
 	float deltaT = 0.010; // TODO: measure this with firmware timer
 
 	float envAccelX=0, envAccelY=0, envAccelZ=0, envGyroX=0, envGyroY=0, envGyroZ = 0;
@@ -486,39 +475,12 @@ int main(void)
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 
-	int counter = 0;
-	int counter2 = 0;
-
-	void dumbFunction(void)
-	{
-	counter++;
-	if(counter < 0)
-	  counter = 0;
-	if(counter2 < 20 || counter2 > 38)
-	  counter2 = 20;
-
-	it2 = get_timer();    // Derive the cycle-count difference
-	it1 = it2 - it1;
-
-	//HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_3);
-
-	if(counter % 10 != 0) // slow this loop down
-	  return;
-
-	counter2++;
-
-	//Just set the register directly
-	htim4.Instance->CCR1 = counter2;
-	htim4.Instance->CCR2 = counter2;
-	htim4.Instance->CCR3 = counter2;
-	htim4.Instance->CCR4 = counter2;
-
-	it1 = it2;
-	}
+	//int counter = 0;
+	//int counter2 = 0;
 
 	// each setting represents motor throttle from 0 to 100%
 	float motor1Setting=0, motor2Setting=0, motor3Setting=0, motor4Setting=0;
-	void setPWM(float motor1, float motor2, float motor3, float motor4)
+	void setPWM(float motor1, float motor2, float motor3, float motor4) // TODO: move to module
 	{
 
 		// clip min/max motor output
@@ -602,7 +564,7 @@ int main(void)
 	float BR = 0;
 	float BL = 0;
 
-	void mixPWM(float thrust, float roll, float pitch, float yaw)
+	void mixPWM(float thrust, float roll, float pitch, float yaw) // TODO: move to module
 	{
 		// TODO: move these multipliers into 3 separate PID loops, one for each control axis
 		pitch *= 1.1; // make pitch a little bit stronger than roll since the battery packs lie on this axis
@@ -622,9 +584,9 @@ int main(void)
 	float kd = 0.0;
 
 	uint32_t PREVIOUS_MS = 0;
-	float gyroRollAngle = 0;
-	float gyroPitchAngle = 0;
-	float gyroYawAngle = 0;
+//	float gyroRollAngle = 0;
+//	float gyroPitchAngle = 0;
+//	float gyroYawAngle = 0;
 	float errorRoll = 0;
 	float errorPitch = 0;
 	float errorYaw = 0;
@@ -632,17 +594,17 @@ int main(void)
 	float lpfErrorPitch = 0;
 	float lpfErrorRollOLD = 0;
 	float lpfErrorPitchOLD = 0;
-	float oldRollAngle = 0;
-	float oldPitchAngle = 0;
-	float oldYawAngle = 0;
-	float oldRollCmd = 0;
-	float oldPitchCmd = 0;
-	float oldYawCmd = 0;
-	float oldErrorRoll = 0;
-	float oldErrorPitch = 0;
+//	float oldRollAngle = 0;
+//	float oldPitchAngle = 0;
+//	float oldYawAngle = 0;
+//	float oldRollCmd = 0;
+//	float oldPitchCmd = 0;
+//	float oldYawCmd = 0;
+//	float oldErrorRoll = 0;
+//	float oldErrorPitch = 0;
 	float oldErrorYaw = 0;
-	float calculatedRollAngleLPF = 0;
-	float calculatedPitchAngleLPF = 0;
+//	float calculatedRollAngleLPF = 0;
+//	float calculatedPitchAngleLPF = 0;
 	float thrustCmd = 0;
 	float rollSet = 0.0;
 	float pitchSet = 0.0;
@@ -657,7 +619,7 @@ int main(void)
 	float lpfAy = 0;
 	float lpfAz = 0;
 
-	uint8_t uartData[150] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
+	//uint8_t uartData[150] = {0}; // seems to make no significant time difference whether this happens here or inside the while loop
 	uint32_t accelMagIgnoreCount = 0;
 	morph_stopwatch rxStopwatch;
 	morphStopWatch_start(&rxStopwatch);
@@ -666,7 +628,7 @@ int main(void)
 	while (1)
 	{
 		// -- FAILSAFE --
-		if(morphStopWatch_ms(&rxStopwatch) > 1333) // check receiver signal every xxx milliseconds
+		if(morphStopWatch_ms(&rxStopwatch) > 999) // check receiver signal every xxx milliseconds
 		{
 			morphStopWatch_start(&rxStopwatch); // restart stopwatch
 
@@ -731,7 +693,7 @@ int main(void)
 		accelPitchAngle *= (180.0 / 3.1415); // convert to degrees
 
 	  	float accelMag = fabs(lpfAx) + fabs(lpfAy) + fabs(lpfAz);
-	  	if(accelMag < 4.9 || accelMag > 19.6) // if acceleration is crazy, ignore calculating angles from it
+	  	if(accelMag < 4.9 || accelMag > 19.6) // if acceleration is beyond ideal, ignore calculating angles from it
 	  	{
 			accelRollAngle = 0;
 			accelPitchAngle = 0;
@@ -783,8 +745,8 @@ int main(void)
 
 		mixPWM(thrustCmd, rollCmd, pitchCmd, yawCmd);
 
-		oldErrorRoll = errorRoll;
-		oldErrorPitch = errorPitch;
+//		oldErrorRoll = errorRoll;
+//		oldErrorPitch = errorPitch;
 
 
 
@@ -830,13 +792,13 @@ int main(void)
 		}
 		if(uartReceive[0] == 'a')
 		{
-			snprintf(uartTransmit, sizeof(uartTransmit), "roll:%f", rollSet);
+			snprintf((char *)uartTransmit, sizeof(uartTransmit), "roll:%f", rollSet);
 			HAL_UART_Transmit(&huart4, uartTransmit, 25, 5);
 			rollSet -= 3;
 		}
 		if(uartReceive[0] == 'd')
 		{
-			snprintf(uartTransmit, sizeof(uartTransmit), "roll:%f", rollSet);
+			snprintf((char *)uartTransmit, sizeof(uartTransmit), "roll:%f", rollSet);
 			HAL_UART_Transmit(&huart4, uartTransmit, 25, 5);
 			rollSet += 3;
 		}
