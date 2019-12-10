@@ -10,21 +10,16 @@
 #ifndef MORPH_STOPWATCH_H_
 #define MORPH_STOPWATCH_H_
 
-uint32_t NOW_MS = 0;
+#include <stdio.h>
+extern uint32_t NOW_MS;
 
 typedef struct morph_stopwatch
 {
 	uint32_t EPOCH;
 }morph_stopwatch;
 
-void morphStopWatch_start(morph_stopwatch *s) // restarts the stopwatch if already started
-{
-	(*s).EPOCH = NOW_MS;
-}
+void morphStopWatch_start(morph_stopwatch *s);
 
-uint32_t morphStopWatch_ms(morph_stopwatch *s) // returns time since specified stop-watch started (in milliseconds)
-{
-	return NOW_MS - (*s).EPOCH;
-}
+uint32_t morphStopWatch_ms(morph_stopwatch *s);
 
 #endif /* MORPH_STOPWATCH_H_ */
