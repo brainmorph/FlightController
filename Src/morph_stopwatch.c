@@ -7,6 +7,7 @@
 
 #include "morph_stopwatch.h"
 
+uint32_t NOW_MS;
 
 void morphStopWatch_start(morph_stopwatch *s) // restarts the stopwatch if already started
 {

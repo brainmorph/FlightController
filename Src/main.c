@@ -109,11 +109,22 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
+  // --GPS_dev test block----
+  uint8_t uartReceive[300] = {0};
+  while(1)
   {
-    /* USER CODE END WHILE */
+	  HAL_Delay(500); // TODO: is this necessary?
+  	  HAL_UART_Receive(&huart5, uartReceive, 300, 1000);
 
-    /* USER CODE BEGIN 3 */
+  	  volatile int dummy;
+  	  dummy = 0;
+  }
+  // ------
+
+  ExecuteFlightControlLoop();
+  /* USER CODE END WHILE */
+
+  /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
 }
 
