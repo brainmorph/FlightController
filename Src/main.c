@@ -21,6 +21,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "i2c.h"
+#include "spi.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -103,6 +104,7 @@ int main(void)
   MX_TIM7_Init();
   MX_UART4_Init();
   MX_UART5_Init();
+  MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -110,9 +112,9 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   ExecuteFlightControlLoop();
-  /* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-  /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
 }
 
