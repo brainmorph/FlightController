@@ -111,6 +111,11 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  //----TEST SPI-----REMOVE THIS
+
+  //-----------------REMOVE THIS
+
   ExecuteFlightControlLoop();
     /* USER CODE END WHILE */
 
