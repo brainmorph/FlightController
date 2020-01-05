@@ -33,6 +33,7 @@
 #include "morph_stopwatch.h"
 #include "circularbuffer.h"
 #include "flight_control.h"
+#include "gps_comms.h"
 
 #include "MY_NRF24.h"
 
@@ -131,7 +132,8 @@ int main(void)
 
   NRF24_startListening(); // start buffering data that comes in over radio
 
-  char myRxData[50];
+  uint8_t counter = 0;
+  uint8_t myRxData[50];
   while(1)
   {
 	  if(NRF24_available())
@@ -141,6 +143,16 @@ int main(void)
 		  myRxData[32] = '\r'; myRxData[32+1] = '\n';
 		  HAL_UART_Transmit(&huart2, (uint8_t *)myRxData, 32+2, 10);
 	  }
+
+	  uint8_t gpsData[300] = {0};
+	  readGPScoordinates(gpsData, 300); // I know this pointer points to a buffer of 300 elements  TODO: automate with creating structure of 2 elements consisting of array pointer and size pointed to
+	  HAL_UART_Transmit(&huart2, gpsData, 300, 100);
+
+	  // print counter
+	  char counterBuf[30] = {0};
+	  snprintf(counterBuf, 30, "count = %d\r\n", counter);
+	  HAL_UART_Transmit(&huart2, (uint8_t*)counterBuf, 30, 10);
+	  counter++;
   }
 
   // Transmit data over nRF

@@ -16,17 +16,19 @@
 
 
 
-GpsCoordinates readGPScoordinates()
+GpsCoordinates readGPScoordinates(uint8_t buffer[], uint16_t size)
 {
 	// return the latest UART reception consisting of coordinates
-
-	uint8_t uartReceive[300] = {0};
-	HAL_UART_Receive(&huart5, uartReceive, 300, 1000); // TODO: narrow down number of bytes required to read
+	HAL_UART_Receive(&huart5, buffer, size, 200); // TODO: narrow down number of bytes required to read
 
 	// TODO: parse uartReceive buffer
 	GpsCoordinates c = {0};
+	c.x = 1.0;
+	c.y = 2.0;
+	c.z = 3.0;
 
 	//c.x = uartReceive[...]
 	//c.y = uartReceive[...]
+
 	return c;
 }

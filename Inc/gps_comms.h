@@ -10,6 +10,8 @@
 
 #define AVAILABLE_GPS_RADIOS 1 // must correspond to number of available GPS receivers
 
+#include <stdint.h>
+
 typedef struct gpsCoordinates
 {
 	float x;
@@ -18,6 +20,6 @@ typedef struct gpsCoordinates
 } GpsCoordinates;
 
 
-GpsCoordinates readGPScoordinates();
+GpsCoordinates readGPScoordinates(uint8_t buffer[], uint16_t size);
 
 #endif /* GPS_COMMS_H_ */
