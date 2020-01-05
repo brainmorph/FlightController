@@ -119,8 +119,23 @@ int main(void)
   NRF24_begin(GPIOB, SPI3_CS_Pin, SPI3_CE_Pin, hspi3);
   nrf24_DebugUART_Init(huart2);
 
+  printRadioSettings();
+
+  // Transmit and don't wait for ACK
+  NRF24_stopListening(); // just in case
+  uint64_t TxpipeAddrs = 0x11223344AA;
+  NRF24_openWritingPipe(TxpipeAddrs);
+  NRF24_setAutoAck(false); // turn off auto ACK
+  NRF24_setChannel(52);
+
+  char myTxData[32] = "Hello World!"; // data to transmit over nRF
   while(1)
-	  printRadioSettings();
+  {
+	  if(NRF24_write(myTxData, 32)) // maximum data length is 32
+		  HAL_UART_Transmit(&huart2, (uint8_t *)"Transmitted Successfully\r\n", strlen("Transmitted Successfully\r\n"), 10);
+
+  	  HAL_Delay(1000);
+  }
   //-----------------REMOVE THIS
 
   ExecuteFlightControlLoop();
