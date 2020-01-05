@@ -11,7 +11,7 @@
  */
 #include "gps_comms.h"
 #include "usart.h"
-
+#include "stm32f4xx_hal_uart.h"
 
 
 
@@ -19,7 +19,8 @@
 GpsCoordinates readGPScoordinates(uint8_t buffer[], uint16_t size)
 {
 	// return the latest UART reception consisting of coordinates
-	HAL_UART_Receive(&huart5, buffer, size, 200); // TODO: narrow down number of bytes required to read
+	if(__HAL_UART_GET_FLAG(&huart5, UART_FLAG_RXNE)) // check if data is available
+		HAL_UART_Receive(&huart5, buffer, size, 300); // TODO: narrow down number of bytes required to read
 
 	// TODO: parse uartReceive buffer
 	GpsCoordinates c = {0};
