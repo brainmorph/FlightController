@@ -124,18 +124,34 @@ int main(void)
   // Transmit and don't wait for ACK
   NRF24_stopListening(); // just in case
   uint64_t TxpipeAddrs = 0x11223344AA;
-  NRF24_openWritingPipe(TxpipeAddrs);
+  uint64_t RxpipeAddrs = 0x11223344AA;
+  NRF24_openReadingPipe(1, RxpipeAddrs);
   NRF24_setAutoAck(false); // turn off auto ACK
   NRF24_setChannel(52);
 
-  char myTxData[32] = "Hello World!"; // data to transmit over nRF
+  NRF24_startListening(); // start buffering data that comes in over radio
+
+  char myRxData[50];
   while(1)
   {
-	  if(NRF24_write(myTxData, 32)) // maximum data length is 32
-		  HAL_UART_Transmit(&huart2, (uint8_t *)"Transmitted Successfully\r\n", strlen("Transmitted Successfully\r\n"), 10);
+	  if(NRF24_available())
+	  {
+		  NRF24_read(myRxData, 32);
 
-  	  HAL_Delay(1000);
+		  myRxData[32] = '\r'; myRxData[32+1] = '\n';
+		  HAL_UART_Transmit(&huart2, (uint8_t *)myRxData, 32+2, 10);
+	  }
   }
+
+  // Transmit data over nRF
+//  char myTxData[32] = "Hello World!"; // data to transmit over nRF
+//  while(1)
+//  {
+//	  if(NRF24_write(myTxData, 32)) // maximum data length is 32
+//		  HAL_UART_Transmit(&huart2, (uint8_t *)"Transmitted Successfully\r\n", strlen("Transmitted Successfully\r\n"), 10);
+//
+//  	  HAL_Delay(1000);
+//  }
   //-----------------REMOVE THIS
 
   ExecuteFlightControlLoop();
