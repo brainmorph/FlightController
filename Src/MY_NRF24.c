@@ -19,6 +19,7 @@ References:				This library was written based on the Arduino NRF24 Open-Source l
 
 //List of header files
 #include "MY_NRF24.h"
+#include <stdbool.h>
 
 //*** Variables declaration ***//
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))

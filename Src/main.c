@@ -34,6 +34,8 @@
 #include "circularbuffer.h"
 #include "flight_control.h"
 
+#include "MY_NRF24.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -114,7 +116,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 
   //----TEST SPI-----REMOVE THIS
+  NRF24_begin(GPIOB, SPI3_CS_Pin, SPI3_CE_Pin, hspi3);
+  nrf24_DebugUART_Init(huart2);
 
+  while(1)
+	  printRadioSettings();
   //-----------------REMOVE THIS
 
   ExecuteFlightControlLoop();
