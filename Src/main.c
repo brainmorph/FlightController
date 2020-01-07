@@ -34,6 +34,7 @@
 #include "circularbuffer.h"
 #include "flight_control.h"
 #include "gps_comms.h"
+#include "bme280.h"
 
 #include "MY_NRF24.h"
 
@@ -115,6 +116,11 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+
+  //----TEST I2C----- // TODO: remove
+  volatile uint8_t registerVal = readBme280reg(0xD0);
+  //---------------------------------
 
   //----TEST SPI-----REMOVE THIS
   NRF24_begin(GPIOB, SPI3_CS_Pin, SPI3_CE_Pin, hspi3);
