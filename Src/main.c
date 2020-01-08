@@ -119,7 +119,14 @@ int main(void)
 
 
   //----TEST I2C----- // TODO: remove
-  volatile uint8_t registerVal = readBme280reg(0xD0);
+  volatile uint8_t registerVal = bme280ReadReg(0xD0);
+  bme280WriteReg(0xF4, 0x07); // wake the BME280 sensor
+
+  while(1)
+  {
+	  volatile uint16_t value = bme280ReadPressure();
+	  uint16_t dummy = value;
+  }
   //---------------------------------
 
   //----TEST SPI-----REMOVE THIS
