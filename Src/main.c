@@ -122,14 +122,22 @@ int main(void)
   volatile uint8_t registerVal = bme280ReadReg(0xD0);
   bme280WriteReg(0xF4, 0x07); // wake the BME280 sensor
 
+  uint32_t tRaw = 0;
+  uint32_t pRaw = 0;
+  uint32_t hRaw = 0;
+
   while(1)
   {
-	  volatile uint16_t value = bme280ReadPressure();
-	  uint16_t dummy = value;
+	  bme280ReadAllRaw(&tRaw, &pRaw, &hRaw);
+
+	  uint32_t paPressure = BME280_CalcP(pRaw);
+	  volatile float pascalFloat = ((float)paPressure)/256.0;
+	  uint32_t dummy = pRaw;
+	  float dummy2 = pascalFloat;
   }
   //---------------------------------
 
-  //----TEST SPI-----REMOVE THIS
+  //----TEST SPI----- // TODO: remove
   NRF24_begin(GPIOB, SPI3_CS_Pin, SPI3_CE_Pin, hspi3);
   nrf24_DebugUART_Init(huart2);
 
