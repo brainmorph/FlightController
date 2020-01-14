@@ -11,14 +11,13 @@
 
 #define DEVICE_ADDRESS 0x76; // use 0x76 even though data-sheet says 0x77
 
-static struct BMP280_cal_param_t cal_param;
 static int32_t t_fine;
 
 uint8_t bme280ReadReg(uint8_t reg)
 {
 	uint16_t deviceAddress = DEVICE_ADDRESS;
 	uint16_t shiftedAddress = deviceAddress << 1;
-	uint8_t pData[100] = {0};
+	uint8_t pData[3] = {0};
 	pData[0] = reg; //register in question
 	uint16_t Size = 1;
 	HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, shiftedAddress, pData, Size, 1000); //select register
@@ -30,6 +29,24 @@ uint8_t bme280ReadReg(uint8_t reg)
 	uint8_t value = 0;
 	status = HAL_I2C_Master_Receive(&hi2c1, shiftedAddress, &value, 1, 1000); //read from register
 	return value;
+}
+
+void bme280ReadRegs(uint8_t reg, uint16_t size, uint8_t* data)
+{
+	uint16_t deviceAddress = DEVICE_ADDRESS;
+	uint16_t shiftedAddress = deviceAddress << 1;
+	uint8_t pData[3] = {0};
+	pData[0] = reg; //register in question
+	uint16_t Size = 1;
+	HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, shiftedAddress, pData, Size, 1000); //select register
+	if(status != HAL_OK)
+	{
+		// TODO: log error
+	}
+
+	status = HAL_I2C_Master_Receive(&hi2c1, shiftedAddress, data, size, 1000); //read from register
+
+
 }
 
 void bme280WriteReg(uint8_t reg, uint8_t value)
@@ -89,6 +106,27 @@ void bme280ReadAllRaw(int32_t *UT, int32_t *UP, int32_t *UH)
 	*UP = (int32_t)((pData[0] << 12) | (pData[1] << 4) | (pData[2] >> 4));
 	*UT = (int32_t)((pData[3] << 12) | (pData[4] << 4) | (pData[5] >> 4));
 	*UH = (int32_t)((pData[6] <<  8) |  pData[7]);
+
+}
+
+// Read calibration data
+void BME280_Read_Calibration(void) {
+	// Read pressure and temperature calibration data (calib00..calib23)
+	bme280ReadRegs(0x88, 24, (uint8_t *)&cal_param);
+
+	// Skip one byte (calib24) and read A1 (calib25)
+	cal_param.dig_H1 = bme280ReadReg(0xA1);
+
+	// Read humidity calibration data (calib26..calib41)
+	uint8_t buf[7];
+	bme280ReadRegs(0xE1, 7, buf);
+
+	// Unpack data
+	cal_param.dig_H2 = (int16_t)((((int8_t)buf[1]) << 8) | buf[0]);
+	cal_param.dig_H3 = buf[2];
+	cal_param.dig_H4 = (int16_t)((((int8_t)buf[3]) << 4) | (buf[4] & 0x0f));
+	cal_param.dig_H5 = (int16_t)((((int8_t)buf[5]) << 4) | (buf[4]  >>  4));
+	cal_param.dig_H6 = (int8_t)buf[6];
 
 }
 

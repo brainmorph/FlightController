@@ -35,6 +35,8 @@
 #include "flight_control.h"
 #include "gps_comms.h"
 
+#include "testFunctionality.h"
+
 
 /* USER CODE END Includes */
 
@@ -114,6 +116,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  testI2C_BME(); // TODO: remove
 
   ExecuteFlightControlLoop();
 

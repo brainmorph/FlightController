@@ -21,10 +21,12 @@ void testI2C_BME()
   int32_t pRaw = 0;
   int32_t hRaw = 0;
 
+  BME280_Read_Calibration();
   while(1)
   {
 	  bme280ReadAllRaw(&tRaw, &pRaw, &hRaw);
 
+	  uint32_t temperature = BME280_CalcT(tRaw);
 	  uint32_t paPressure = BME280_CalcP(pRaw);
 	  volatile float pascalFloat = ((float)paPressure)/256.0;
 	  uint32_t dummy = pRaw;
