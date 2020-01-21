@@ -16,6 +16,7 @@ void bme280WriteReg(uint8_t reg, uint8_t value);
 uint32_t bme280ReadPressure();
 void bme280ReadAllRaw(int32_t *UT, int32_t *UP, int32_t *UH);
 void BME280_Read_Calibration(void);
+int32_t BME280_Pa_to_Alt(uint32_t P);
 
 int32_t BME280_CalcT(int32_t UT);
 uint32_t BME280_CalcP(int32_t UP);
